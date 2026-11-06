@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E5E8EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Aire de jeux">
+<meta name="description" content="Jeux de route entre potes : On s’en souviendra ?, Tu préfères, Devine le prix et d’autres.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Aire de jeux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Overpass:wght@400;600;700;800&family=Overpass+Mono:wght@600;700&display=swap">
+<style>
+/* Concept : une aire d’autoroute. Chaque jeu est un panneau de signalisation français
+   (bleu autoroute, marron patrimoine, vert direction, blanc local, jaune déviation),
+   les joueurs sont des bornes kilométriques, le marquage jaune sert d’accent. */
+:root{
+  --bg:#E5E8EC; --surface:#FFFFFF; --surface-2:#F0F2F5; --ink:#13171C; --muted:#55606B; --line:#D2D8DF;
+  --sign-blue:#1A4E9B; --sign-brown:#7B4628; --sign-green:#0F7148; --sign-paper:#F8F8F4; --sign-ink:#111111; --sign-red:#C8102E;
+  --yellow:#F6B800; --on-yellow:#17130A; --good:#1C8A4B; --near:#B87D00; --asphalt:#2A2F35; --borne:#F4F4F0;
+  --shadow:0 1px 0 rgb(0 0 0 / .16), 0 12px 26px -16px rgb(10 25 50 / .5);
+  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
+  --f-body:"Overpass","Helvetica Neue",Arial,sans-serif;
+  --f-num:"Overpass Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111316; --surface:#1B1E22; --surface-2:#23272C; --ink:#ECEEF1; --muted:#9AA3AD; --line:#2E3339;
+    --good:#3DBA72; --near:#E3A920; --asphalt:#0A0B0D; --borne:#ECECE6;
+    --shadow:0 1px 0 rgb(0 0 0 / .5), 0 14px 30px -16px rgb(0 0 0 / .9); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111316; --surface:#1B1E22; --surface-2:#23272C; --ink:#ECEEF1; --muted:#9AA3AD; --line:#2E3339;
+  --good:#3DBA72; --near:#E3A920; --asphalt:#0A0B0D; --borne:#ECECE6;
+  --shadow:0 1px 0 rgb(0 0 0 / .5), 0 14px 30px -16px rgb(0 0 0 / .9); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  -webkit-tap-highlight-color:transparent;
+}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); z-index:10; background:var(--bg)}
+button{font:inherit; color:inherit; cursor:pointer}
+button:focus-visible, input:focus-visible, summary:focus-visible{outline:3px solid var(--yellow); outline-offset:2px}
+.wrap{max-width:560px; margin:0 auto; padding-block:16px 56px; display:flex; flex-direction:column; gap:24px}
+h1,h2,h3{text-wrap:balance; margin:0}
+p{margin:0}
+
+/* Panneaux */
+.sign{--c:var(--sign-blue); --fg:#fff; --bd:#fff; --bw:2.5px;
+  display:block; width:100%; background:var(--c); color:var(--fg); border:0; border-radius:16px; padding:5px;
+  box-shadow:var(--shadow); text-align:left}
+.sign > .in{position:relative; display:flex; flex-direction:column; gap:8px; height:100%;
+  border:var(--bw) solid var(--bd); border-radius:11px; padding:16px 16px 18px}
+.sign.brown{--c:var(--sign-brown)}
+.sign.green{--c:var(--sign-green)}
+.sign.paper{--c:var(--sign-paper); --fg:var(--sign-ink); --bd:var(--sign-ink)}
+.sign.red{--c:var(--sign-paper); --fg:var(--sign-ink); --bd:var(--sign-red); --bw:6px}
+.sign.red > .in{padding:14px 14px 16px}
+.sign.yellow{--c:var(--yellow); --fg:var(--on-yellow); --bd:var(--on-yellow)}
+.picto{width:34px; height:34px; display:block}
+.picto svg{width:100%; height:100%; display:block}
+
+/* En-tête */
+.hero .in{gap:12px; padding:18px 18px 16px}
+.hero-row{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+.hero h1{font-family:var(--f-display); line-height:.9; display:flex; flex-direction:column}
+.hero h1 span{font-weight:600; font-size:24px; letter-spacing:.01em}
+.hero h1 b{font-weight:800; font-size:clamp(58px,17vw,76px); letter-spacing:-.01em}
+.dist{font:700 30px/1 var(--f-display); white-space:nowrap; padding-top:4px}
+.hero-sub{font-size:15px; line-height:1.45; max-width:40ch; opacity:.92}
+.services{display:flex; gap:6px; flex-wrap:wrap}
+.svc{width:34px; height:34px; border-radius:6px; background:#fff; color:var(--sign-blue); display:grid; place-items:center}
+.svc svg{width:22px; height:22px}
+
+/* Sections */
+.sec{display:flex; flex-direction:column; gap:12px}
+.sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+.sec-head h2{font:800 26px/1 var(--f-display); letter-spacing:.01em}
+.link{background:none; border:0; padding:6px 0; font-weight:700; font-size:15px; color:var(--muted); text-decoration:underline; text-underline-offset:3px}
+
+/* Bornes kilométriques = joueurs */
+.bornes{display:flex; gap:12px; overflow-x:auto; padding:2px 2px 8px}
+.borne{flex:0 0 auto; width:62px; display:flex; flex-direction:column; align-items:center}
+.borne .b{width:58px; height:84px; border-radius:29px 29px 5px 5px; background:var(--borne); overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; box-shadow:inset 0 -7px 0 rgb(0 0 0 / .08), var(--shadow)}
+.borne .cap{width:100%; height:36px; background:var(--cap); color:var(--capfg); padding:9px 4px 0;
+  font:700 13px/1.2 var(--f-display); text-transform:uppercase; letter-spacing:.04em; text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.borne .num{font:700 24px/1 var(--f-num); color:#111; margin-top:12px; font-variant-numeric:tabular-nums}
+.leader{font-size:14px; color:var(--muted)}
+.leader b{color:var(--ink)}
+
+/* Édition de l’équipage */
+.editor{display:flex; flex-direction:column; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px}
+.ed-row{display:grid; grid-template-columns:12px minmax(0,1fr) auto; align-items:center; gap:10px}
+.ed-row i{width:12px; height:12px; border-radius:3px; background:var(--cap)}
+.ed-row input{width:100%; min-height:44px; border:1.5px solid var(--line); border-radius:10px; background:var(--surface-2); color:var(--ink); padding:0 12px; font:600 16px var(--f-body)}
+.ed-del{min-width:44px; min-height:44px; border-radius:10px; border:1.5px solid var(--line); background:transparent; font-weight:800; color:var(--muted)}
+.ed-actions{display:flex; gap:8px; flex-wrap:wrap}
+.btn-s{min-height:44px; padding:0 14px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface-2); font-weight:700; font-size:15px}
+.btn-s.solid{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.btn-s.warn{border-color:var(--sign-red); color:var(--sign-red); background:transparent}
+
+/* Portique des jeux */
+.gantry{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px}
+.game-sign{cursor:pointer; transition:transform .12s ease}
+.game-sign:active{transform:translateY(2px) scale(.99)}
+.game-sign .in{min-height:168px; gap:6px}
+.gname{font:700 25px/1.02 var(--f-display); margin-top:6px}
+.gpitch{font-size:13px; line-height:1.35; opacity:.88}
+.mine{position:absolute; top:10px; right:10px; font:700 10px/1 var(--f-body); letter-spacing:.08em; text-transform:uppercase;
+  background:var(--fg); color:var(--c); padding:5px 6px 4px; border-radius:4px}
+.sign.red .mine{background:var(--sign-red); color:#fff}
+.cnt{margin-top:auto; font:600 12px var(--f-num); opacity:.75}
+
+.howto{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px}
+.howto h3{font:800 20px/1.1 var(--f-display)}
+.howto ol{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px}
+.foot{font-size:13px; color:var(--muted); line-height:1.5}
+
+/* Écran de jeu */
+.topbar{position:sticky; top:env(safe-area-inset-top, 0px); z-index:20; background:var(--bg); border-bottom:1px solid var(--line);
+  margin-left:calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.topbar-in{max-width:560px; margin:0 auto; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; min-height:56px}
+.back{min-height:44px; padding:0 12px 0 8px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); font-weight:800; font-size:15px; display:flex; align-items:center; gap:4px}
+.back svg{width:18px; height:18px}
+.tb-title{font:800 20px/1 var(--f-display); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tb-count{font:700 13px var(--f-num); color:var(--muted); font-variant-numeric:tabular-nums}
+.rule{font-size:15px; color:var(--muted)}
+.rule summary{cursor:pointer; font-weight:700; color:var(--ink); list-style:none; display:flex; align-items:center; gap:6px; min-height:32px}
+.rule summary::-webkit-details-marker{display:none}
+.rule summary::before{content:"+"; display:inline-grid; place-items:center; width:20px; height:20px; border-radius:5px; background:var(--surface-2); border:1px solid var(--line); font-weight:800}
+.rule[open] summary::before{content:"−"}
+.rule p{padding-top:6px; max-width:62ch}
+
+.eyebrow{font:700 12px/1.3 var(--f-body); letter-spacing:.12em; text-transform:uppercase}
+.sign .eyebrow{opacity:.85}
+.big{font:800 clamp(36px,11vw,50px)/.98 var(--f-display); letter-spacing:-.005em}
+.sub{font-size:16px; opacity:.9}
+.q{font:700 clamp(25px,7vw,32px)/1.1 var(--f-display)}
+.opt{display:flex; gap:12px; align-items:flex-start; font:700 clamp(23px,6.4vw,29px)/1.1 var(--f-display); transition:opacity .2s}
+.opt .tag{flex:none; width:32px; height:32px; border-radius:7px; background:var(--fg); color:var(--c); font:800 20px/33px var(--f-display); text-align:center}
+.sign.paper .opt .tag, .sign.red .opt .tag{color:var(--sign-paper)}
+.or{font:700 12px/1 var(--f-body); letter-spacing:.16em; text-transform:uppercase; opacity:.75; padding:4px 0 4px 44px}
+.revealed .opt:not(.chosen){opacity:.45}
+.opt.chosen .tag{background:var(--yellow); color:var(--on-yellow)}
+.sign.yellow .opt.chosen .tag{background:var(--on-yellow); color:var(--yellow)}
+
+.picks{display:flex; flex-direction:column; gap:8px}
+.picks-h{font:800 20px/1.1 var(--f-display)}
+.hint{font-size:15px; color:var(--muted)}
+.pick{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px 8px 8px 12px}
+.pick.wide{grid-template-columns:minmax(0,1fr); padding:10px}
+.pname{display:flex; align-items:center; gap:8px; font-weight:700; min-width:0}
+.pname i{flex:none; width:10px; height:10px; border-radius:3px; background:var(--cap)}
+.pname span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pname .sc{margin-left:auto; font:700 13px var(--f-num); color:var(--muted); font-variant-numeric:tabular-nums}
+.award{font:700 13px var(--f-num); color:var(--good); white-space:nowrap}
+.chips{display:grid; grid-template-columns:repeat(var(--n), minmax(0,1fr)); gap:6px}
+.pick:not(.wide) .chips{grid-template-columns:repeat(var(--n), minmax(62px,auto))}
+.chip{min-height:46px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink);
+  font:700 15px var(--f-body); padding:0 10px; font-variant-numeric:tabular-nums; transition:background .12s, color .12s}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.chip:disabled{cursor:default}
+.chip.good{box-shadow:0 0 0 3px var(--good)}
+.chip.near{box-shadow:0 0 0 3px var(--near)}
+.winners{display:flex; flex-wrap:wrap; gap:8px}
+.winners .chip{display:flex; align-items:center; gap:8px; padding:0 14px}
+.winners .chip i{width:10px; height:10px; border-radius:3px; background:var(--cap)}
+
+.btn{display:block; width:100%; min-height:58px; border-radius:14px; border:0; font:800 18px var(--f-body); letter-spacing:.01em}
+.btn.primary{background:var(--yellow); color:var(--on-yellow); box-shadow:inset 0 -4px 0 rgb(0 0 0 / .18)}
+.btn.primary:active{transform:translateY(1px)}
+.btn.ghost{background:transparent; color:var(--muted); border:1.5px dashed var(--line); min-height:48px; font-size:15px; font-weight:700}
+.nav{display:flex; flex-direction:column; gap:10px}
+
+.reveal{scroll-margin-top:72px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px; animation:pop .32s ease-out}
+.reveal .eyebrow{color:var(--muted)}
+.verdict{font:800 clamp(38px,11vw,48px)/1 var(--f-display)}
+.why{font-size:16.5px; line-height:1.58; max-width:62ch}
+.pts-line{font-size:15px; font-weight:700; color:var(--good)}
+.pts-line.none{color:var(--muted); font-weight:600}
+@keyframes pop{from{transform:translateY(8px); opacity:.4} to{transform:none; opacity:1}}
+
+.road{display:flex; flex-direction:column; gap:8px}
+.asphalt{position:relative; height:44px; border-radius:8px; background:var(--asphalt)}
+.asphalt .fill{position:absolute; inset:0 auto 0 0; border-radius:8px; background:linear-gradient(90deg, rgb(246 184 0 / 0), rgb(246 184 0 / .38))}
+.asphalt .dash{position:absolute; left:10px; right:10px; top:50%; height:3px; margin-top:-1.5px; background:repeating-linear-gradient(90deg,#F4F4F0 0 14px, transparent 14px 26px)}
+.asphalt .car{position:absolute; top:50%; width:38px; height:24px; transform:translate(-50%,-50%); color:var(--yellow)}
+.asphalt .car svg{width:100%; height:100%; display:block}
+.marks{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); text-align:center; font:600 12px var(--f-num); color:var(--muted)}
+.marks span.on{color:var(--ink); font-weight:700}
+.marks small{display:block; font-size:10px; opacity:.8}
+
+.gauge{position:relative; height:20px; border-radius:10px; background:var(--surface-2); border:1px solid var(--line); overflow:hidden}
+.gauge span{position:absolute; inset:0 auto 0 0; background:var(--sign-red)}
+.gauge-ticks{display:flex; justify-content:space-between; font:600 11px var(--f-num); color:var(--muted)}
+
+.tl{display:flex; flex-direction:column; gap:0; border-left:3px solid var(--line); margin-left:6px}
+.tl div{position:relative; padding:4px 0 12px 16px}
+.tl div::before{content:""; position:absolute; left:-8.5px; top:9px; width:14px; height:14px; border-radius:50%; background:var(--surface); border:3px solid var(--ink)}
+.tl div.a::before{background:var(--yellow); border-color:var(--yellow)}
+.tl b{display:block; font-size:16px; line-height:1.3}
+.tl span{font:600 13px var(--f-num); color:var(--muted)}
+
+.ranks{display:flex; flex-direction:column; gap:8px}
+.rank{display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; align-items:center; padding:10px 12px; border-radius:12px; background:var(--surface-2)}
+.rank b{font:800 22px/1 var(--f-display)}
+.rank em{font-style:normal; font:700 13px var(--f-num); display:inline-grid; place-items:center; min-width:46px; height:30px; border-radius:7px; background:var(--line); color:var(--ink); padding:0 6px}
+.rank.win em{background:var(--yellow); color:var(--on-yellow)}
+
+.toast{position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:50;
+  background:var(--ink); color:var(--bg); padding:12px 16px; border-radius:12px; font-weight:700; font-size:14px; max-width:calc(100% - 32px); box-shadow:var(--shadow)}
+
+@media (max-width:360px){ .gantry{grid-template-columns:minmax(0,1fr)} .game-sign .in{min-height:0} }
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ============ CONTENU ============ */
+
+/* On s’en souviendra ? v : 0 = moins de 100 ans, 1 = 100 ans, 2 = 300 ans, 3 = 500 ans, 4 = 1 000 ans et plus */
+const SOUV = [
+ {n:"Adolf Hitler", d:"Dictateur nazi (1889-1945)", v:4, w:"La Seconde Guerre mondiale et la Shoah sont les événements les plus documentés de l’histoire humaine. Son nom sert déjà de mot pour dire « le mal absolu ». Néron et Attila sont toujours cités 1 500 à 2 000 ans après leur mort : il les rejoindra."},
+ {n:"Cristiano Ronaldo", d:"Footballeur portugais, 5 Ballons d’or", v:1, w:"Dans 100 ans, les fans de foot le connaîtront encore, comme on connaît Pelé aujourd’hui. Au-delà, les sportifs ne traversent pas les époques : les sports changent et les records tombent. Qui connaît le meilleur jouteur de l’an 1400 ? Personne."},
+ {n:"Napoléon Bonaparte", d:"Empereur des Français (1769-1821)", v:4, w:"Déjà 200 ans et toujours le Français le plus étudié au monde. Son Code civil inspire encore le droit de dizaines de pays. C’est le Jules César de l’époque moderne, et César tient depuis 2 000 ans."},
+ {n:"Albert Einstein", d:"Physicien, théorie de la relativité", v:4, w:"Son nom est devenu un nom commun pour dire « génie », et E = mc² est l’équation la plus célèbre du monde. Archimède est encore connu 2 200 ans après lui pour bien moins que ça."},
+ {n:"Elon Musk", d:"Patron de Tesla et de SpaceX", v:2, w:"Tout dépend de Mars. Si SpaceX y pose les premiers humains, il devient le Christophe Colomb du XXIe siècle et passe à 1 000 ans. Sinon, il finit comme Rockefeller : un nom qui veut dire « très riche », sans plus. Je mise sur 300 ans."},
+ {n:"Kylian Mbappé", d:"Footballeur, champion du monde 2018", v:0, w:"Qui connaît Raymond Kopa, Ballon d’or 1958 ? Presque plus personne, moins de 70 ans après. Sauf s’il gagne trois Coupes du monde, Mbappé prendra le même chemin."},
+ {n:"Lionel Messi", d:"Footballeur argentin, 8 Ballons d’or", v:1, w:"Même verdict que Ronaldo : une légende pour les fans pendant un siècle, puis une ligne dans les livres de sport. Le duel Messi-Ronaldo survivra peut-être mieux que chacun des deux séparément."},
+ {n:"Steve Jobs", d:"Cofondateur d’Apple, père de l’iPhone", v:1, w:"Qui connaît George Eastman, le fondateur de Kodak ? Kodak a pourtant été aussi incontournable qu’Apple. Les entrepreneurs survivent quand leur nom est sur le produit, comme Ford ou Disney. Le sien n’y est pas."},
+ {n:"Marie Curie", d:"Physicienne, deux prix Nobel", v:4, w:"Son nom est gravé dans le tableau périodique (le curium) et dans une unité de mesure (le curie). Les noms d’unités ne meurent jamais : demande à Volta, Ampère ou Newton."},
+ {n:"Michael Jackson", d:"Le roi de la pop", v:2, w:"Énorme différence avec les stars d’avant : sa musique est enregistrée et ne disparaîtra pas. Thriller reste l’album le plus vendu de l’histoire et le moonwalk est un pas universel. Pour 1 000 ans, il faudrait qu’on enseigne la pop comme on enseigne Mozart."},
+ {n:"Les Beatles", d:"Groupe anglais des années 1960", v:3, w:"Ils sont déjà étudiés dans les conservatoires. Dans 500 ans, ils seront à la pop ce que Bach est au baroque : les fondateurs qu’on cite pour expliquer tout le reste."},
+ {n:"Kim Kardashian", d:"Star de téléréalité et d’Instagram", v:0, w:"Célèbre pour être célèbre. Les « it-girls » des années 1920 étaient aussi connues qu’elle à leur époque. Tu peux en citer une ?"},
+ {n:"Charles de Gaulle", d:"Général, président de 1959 à 1969", v:3, w:"L’homme du 18 Juin et le fondateur de la Ve République. En France, il a le profil de Jeanne d’Arc : le sauveur de la nation. Elle tient depuis 600 ans, il tiendra au moins 500."},
+ {n:"Emmanuel Macron", d:"Président de la République depuis 2017", v:1, w:"Qui connaît Gaston Doumergue, président de 1924 à 1931 ? Après un siècle, seuls les présidents liés à une guerre ou à un changement de régime restent dans les conversations. Les autres restent dans les manuels."},
+ {n:"Donald Trump", d:"45e et 47e président des États-Unis", v:2, w:"Grover Cleveland a aussi fait deux mandats non consécutifs, et presque personne ne le connaît. Mais l’époque de Trump, avec les réseaux sociaux et la polarisation, sera énormément étudiée par les historiens. Je dis 300 ans."},
+ {n:"Barack Obama", d:"44e président des États-Unis", v:2, w:"Les « premiers » traversent les siècles : premier président noir des États-Unis, il sera cité aussi longtemps qu’on racontera l’histoire américaine. Au-delà de 300 ans, seuls Washington et Lincoln semblent partis pour durer."},
+ {n:"Neil Armstrong", d:"Premier homme sur la Lune", v:4, w:"Même si on vit un jour sur Mars, le premier pas sur un autre monde restera un moment fondateur. C’est notre Christophe Colomb, et 530 ans plus tard, tout le monde connaît Colomb."},
+ {n:"Youri Gagarine", d:"Premier humain dans l’espace (1961)", v:3, w:"Les « premiers » ne s’oublient pas. Mais dans 1 000 ans, le premier pas sur la Lune risque de lui voler la vedette dans les récits. En Russie, en revanche, il est éternel."},
+ {n:"Thomas Pesquet", d:"Astronaute français", v:0, w:"Qui connaît Jean-Loup Chrétien ? C’était le premier Français dans l’espace, en 1982. Être le plus populaire ne suffit pas, il faut être le premier."},
+ {n:"Léonard de Vinci", d:"Peintre de La Joconde", v:4, w:"Déjà 500 ans, et La Joconde reste le tableau le plus célèbre du monde. Artiste et inventeur à la fois, il a une place réservée dans tous les récits de la Renaissance."},
+ {n:"Squeezie", d:"Youtubeur français", v:0, w:"Les youtubeurs seront comme les animateurs radio des années 1950 : toute une génération s’en souvient, la suivante non."},
+ {n:"Jul", d:"Rappeur marseillais, recordman des disques d’or", v:0, w:"Le record de ventes de disques de 1925 ne dit rien à personne aujourd’hui. Les records commerciaux s’effacent ; ce qui reste, c’est ce qui change un genre musical."},
+ {n:"Zinédine Zidane", d:"Champion du monde 1998", v:1, w:"Le coup de tête de 2006 est passé dans la culture populaire, comme la « main de Dieu » de Maradona. Ça peut lui valoir un siècle, pas plus."},
+ {n:"Mozart", d:"Compositeur autrichien (1756-1791)", v:4, w:"230 ans après sa mort, on le joue chaque soir quelque part dans le monde. Le répertoire classique s’est figé autour de quelques noms, et le sien est en haut de la liste."},
+ {n:"Taylor Swift", d:"Chanteuse américaine", v:1, w:"La tournée la plus lucrative de l’histoire, mais les records de ventes ne font pas l’éternité. Dans 100 ans, elle sera le symbole d’une époque. Dans 300 ans, une note de bas de page de l’histoire de la pop."},
+ {n:"Gustave Eiffel", d:"Ingénieur de la tour Eiffel", v:4, w:"Tant que la tour existera, ou qu’on la verra dans les livres, son nom sera prononcé tous les jours par des millions de gens. La meilleure façon de survivre : donner son nom à un monument."},
+ {n:"Louis Pasteur", d:"Vaccin contre la rage, pasteurisation", v:4, w:"Son nom est devenu un verbe : pasteuriser. Ça, c’est l’immortalité garantie."},
+ {n:"Bill Gates", d:"Fondateur de Microsoft", v:1, w:"Il deviendra le Rockefeller du numérique : un nom qui veut dire « milliardaire », puis qui s’efface. Sa fondation contre le paludisme pourrait le sauver, mais les philanthropes restent rarement célèbres longtemps."},
+ {n:"Warren Buffett", d:"Investisseur, l’oracle d’Omaha", v:0, w:"Les investisseurs passent rarement le siècle. Qui connaît Jesse Livermore, le spéculateur le plus célèbre des années 1920 ? Les pros de la finance, et c’est tout."},
+ {n:"Nelson Mandela", d:"Président sud-africain, prix Nobel de la paix", v:3, w:"Il est devenu un symbole universel. Les symboles moraux résistent mieux que les dirigeants : on cite encore Spartacus 2 000 ans après."},
+ {n:"Martin Luther King", d:"Pasteur, « I have a dream »", v:3, w:"Un discours connu dans le monde entier et un jour férié à son nom aux États-Unis. Les grandes phrases survivent à leurs auteurs, et la sienne l’emporte avec elle."},
+ {n:"Gandhi", d:"Figure de l’indépendance indienne", v:4, w:"Le symbole mondial de la non-violence et le père de l’Inde moderne, pays le plus peuplé du monde. Son visage est sur tous les billets indiens. L’Inde ne le laissera pas tomber dans l’oubli."},
+ {n:"Coco Chanel", d:"Créatrice de mode", v:3, w:"Elle a fait de son nom une marque, la meilleure assurance contre l’oubli. Tant que le n° 5 se vendra, on prononcera Chanel. Le risque : qu’on oublie qu’il y avait une femme derrière."},
+ {n:"Louis Vuitton", d:"Malletier (1821-1892)", v:3, w:"Plus de 130 ans après sa mort, son nom est prononcé des millions de fois par jour. Mais demande autour de toi : beaucoup ne savent même pas que c’était un homme. On se souviendra du nom, pas de la personne."},
+ {n:"Walt Disney", d:"Créateur de Mickey", v:2, w:"Son nom est sur l’une des marques les plus puissantes du monde. Mais les marques aussi finissent par mourir. Je dis 300 ans, et plus si Disney existe encore en 2300."},
+ {n:"Johnny Hallyday", d:"Le rockeur français", v:1, w:"Des centaines de milliers de personnes sur les Champs-Élysées en 2017. Mais sa gloire est très française et très générationnelle. Dans 100 ans, il sera ce que Maurice Chevalier est pour nous."},
+ {n:"Édith Piaf", d:"Chanteuse de La Vie en rose", v:2, w:"La Vie en rose est connue jusqu’au Japon et aux États-Unis. Pour le monde entier, elle est « la chanson française », ce qui la protège bien mieux que Johnny."},
+ {n:"Nabilla", d:"« Allô ! Non mais allô, quoi »", v:0, w:"La phrase survivra peut-être plus longtemps qu’elle. C’est souvent le cas : on cite des répliques dont on a oublié l’auteur."},
+ {n:"Mark Zuckerberg", d:"Fondateur de Facebook", v:1, w:"Un film lui est consacré, ça aide. Mais qui connaît le fondateur de MySpace ? Si Facebook disparaît un jour comme MySpace, il suivra."},
+ {n:"Alan Turing", d:"Mathématicien, père de l’informatique", v:4, w:"Machine de Turing, test de Turing : il est dans tous les cours d’informatique. Plus l’IA prendra de place, plus on remontera jusqu’à lui. Il sera l’Euclide de l’ère numérique."},
+ {n:"Tim Berners-Lee", d:"Inventeur du Web (1989)", v:1, w:"Il a inventé le Web et, même aujourd’hui, presque personne ne connaît son nom. Changer le monde ne suffit pas pour rester célèbre. Il restera dans les livres d’histoire de l’informatique, pas dans les conversations."},
+ {n:"Satoshi Nakamoto", d:"Créateur anonyme du bitcoin", v:2, w:"Le mystère fabrique les légendes. Personne ne sait qui c’est, et c’est précisément ce qui le rend fascinant. Si le bitcoin survit, son créateur fantôme deviendra un mythe moderne."},
+ {n:"Pablo Picasso", d:"Peintre, Guernica", v:3, w:"Il est le peintre du XXe siècle comme Michel-Ange est celui du XVIe. Michel-Ange tient depuis 500 ans, Picasso est bien parti pour en faire autant."},
+ {n:"Charlie Chaplin", d:"Charlot, star du cinéma muet", v:2, w:"Le premier acteur connu dans le monde entier. Le cinéma muet est loin, mais la silhouette de Charlot est devenue le symbole du cinéma lui-même."},
+ {n:"Elvis Presley", d:"Le King du rock", v:2, w:"Le rock deviendra un genre ancien, comme le baroque, et on se souviendra de ses fondateurs. Elvis est le visage du rock comme Louis XIV est celui de Versailles."},
+ {n:"Elizabeth II", d:"Reine du Royaume-Uni de 1952 à 2022", v:3, w:"70 ans de règne, un record britannique. La reine Victoria a donné son nom à une époque entière, l’ère victorienne. Elizabeth II est bien partie pour le même destin."},
+ {n:"J. K. Rowling", d:"Autrice de Harry Potter", v:2, w:"Lewis Carroll est encore connu 160 ans après Alice au pays des merveilles. Harry Potter a tout d’un classique pour enfants. Mais on retiendra Harry plus longtemps que son autrice."},
+ {n:"J. R. R. Tolkien", d:"Auteur du Seigneur des anneaux", v:3, w:"Il a inventé un monde entier, des langues, et le genre fantasy moderne. Homère a inventé l’épopée il y a 2 800 ans ; Tolkien peut viser 500 ans sans trembler."},
+ {n:"Usain Bolt", d:"Sprinteur, 9,58 s au 100 m", v:1, w:"Le jour où son record tombera, il deviendra un ancien recordman parmi d’autres. Jesse Owens est encore connu 90 ans après, mais parce qu’il a gagné les JO de Berlin sous les yeux de Hitler. Bolt n’a pas cette dimension historique."},
+ {n:"Mohamed Ali", d:"Boxeur, champion du monde", v:2, w:"L’exception chez les sportifs : il a dépassé le sport en refusant la guerre du Vietnam et en s’engageant pour les droits civiques. Il sera dans les livres d’histoire, pas seulement dans ceux de sport."},
+ {n:"Michael Jordan", d:"Légende du basket", v:1, w:"Son nom survivra plus longtemps sur des baskets que dans les mémoires. Dans 300 ans, on achètera peut-être encore des Jordan sans savoir qui c’était."},
+ {n:"Freddie Mercury", d:"Chanteur de Queen", v:1, w:"Bohemian Rhapsody passe encore partout et un film lui a été consacré. Il tiendra un siècle, mais à long terme, les chanteurs s’effacent derrière le nom du groupe."},
+ {n:"Cléopâtre", d:"Reine d’Égypte (69-30 av. J.-C.)", v:4, w:"Déjà plus de 2 000 ans. Elle prouve qu’une légende entretenue par les pièces de théâtre et les films peut traverser les millénaires."},
+ {n:"Greta Thunberg", d:"Militante pour le climat", v:1, w:"Si le climat devient le sujet du siècle, elle en sera un symbole, comme Rosa Parks pour les droits civiques. Mais les visages d’un mouvement sont souvent remplacés par d’autres plus tard."},
+ {n:"Inoxtag", d:"Youtubeur qui a gravi l’Everest", v:0, w:"Des milliers de personnes ont gravi l’Everest. Même le premier, Edmund Hillary, est peu connu aujourd’hui. Inoxtag a marqué une génération, pas l’histoire."},
+ {n:"Bernard Arnault", d:"Patron de LVMH", v:0, w:"Les grands patrons s’effacent derrière leurs marques. Dans 100 ans, Louis Vuitton et Dior seront encore là ; lui, beaucoup moins dans les mémoires."},
+ {n:"Molière", d:"Dramaturge (1622-1673)", v:4, w:"Le français s’appelle « la langue de Molière ». Quand une langue entière porte ton nom, tu es tranquille pour 1 000 ans."},
+ {n:"Victor Hugo", d:"Les Misérables, Notre-Dame de Paris", v:3, w:"Les Misérables est l’une des comédies musicales les plus jouées au monde, et Disney a adapté Notre-Dame de Paris. Il est le Shakespeare français."},
+ {n:"Stephen Hawking", d:"Physicien, spécialiste des trous noirs", v:2, w:"Son nom restera attaché au « rayonnement de Hawking » dans les manuels de physique. Comme Doppler : tout le monde connaît l’effet, plus personne ne connaît l’homme."},
+ {n:"Lady Diana", d:"Princesse de Galles (1961-1997)", v:1, w:"Sissi est encore connue plus d’un siècle après grâce aux films. Diana a eu The Crown. Je dis 100 ans."},
+ {n:"Sam Altman", d:"Patron d’OpenAI, ChatGPT", v:1, w:"Si ChatGPT reste comme le début de l’ère de l’IA, il sera cité parmi les pionniers. Mais à long terme, on retient les inventeurs mieux que les patrons."},
+ {n:"Toi", d:"Oui, toi, qui lis cette carte", v:0, w:"Désolé. Sauf si un arrière-petit-enfant se met à la généalogie, ou si tu inventes quelque chose qui porte ton nom. Il te reste du temps."},
+ {n:"Moi, Claude", d:"L’IA qui a codé cette appli", v:1, w:"Honnêtement, je serai sans doute comme l’ENIAC, l’un des premiers ordinateurs : un nom connu des passionnés de l’histoire de l’IA. Les modèles d’après seront bien plus forts que moi."}
+];
+
+/* Tu préfères. c = mon choix */
+const TP = [
+ {a:"Pouvoir voler", b:"Pouvoir devenir invisible", c:"a", w:"Invisible, on finit toujours par entendre ce qu’on n’aurait pas dû entendre. Voler, c’est la liberté au quotidien."},
+ {a:"Toucher 1 million d’euros tout de suite", b:"Toucher 10 000 € par mois pendant 10 ans", c:"a", w:"Les mensualités font 1,2 million au total, mais avec 4 % de rendement par an, elles ne valent qu’environ 990 000 € aujourd’hui. C’est presque pareil, alors je prends le million : on le place comme on veut, et on ne dépend de personne pendant dix ans."},
+ {a:"Ne plus jamais écouter de musique", b:"Ne plus jamais regarder de film ni de série", c:"b", w:"La musique accompagne tout le reste : la route, le sport, la cuisine. Un film, c’est deux heures assis. Le choix est vite fait."},
+ {a:"Avoir toujours 10 minutes de retard", b:"Arriver toujours 20 minutes en avance", c:"b", w:"En avance, on lit, on observe, on boit un café. En retard, on stresse et on agace tout le monde. 20 minutes, c’est le prix de la sérénité."},
+ {a:"Parler toutes les langues du monde", b:"Jouer de tous les instruments", c:"a", w:"Avec toutes les langues, on peut parler à 8 milliards de personnes. Avec tous les instruments, on peut jouer pour elles, mais seulement si elles restent."},
+ {a:"Revivre la même journée pendant un an, comme dans Un jour sans fin", b:"Sauter directement un an dans le futur", c:"a", w:"Un an de journée bloquée, c’est 365 tentatives pour apprendre le piano, une langue, un tour de magie. Sauter un an, c’est perdre un an de vie."},
+ {a:"Que ton historique Google soit rendu public", b:"Que tes messages WhatsApp soient rendus publics", c:"a", w:"Les recherches Google sont gênantes, mais elles ne parlent que de toi. Les messages, eux, impliquent les autres. Là, on perd des amis."},
+ {a:"Conduire les 4 heures du trajet", b:"Être assis au milieu, à l’arrière, pendant 4 heures", c:"a", w:"La place du milieu, c’est les genoux contre la console et aucun accoudoir. Au volant, on choisit au moins la musique."},
+ {a:"Ne manger que du salé jusqu’à la fin de ta vie", b:"Ne manger que du sucré jusqu’à la fin de ta vie", c:"a", w:"Le salé couvre 90 % de la cuisine du monde. Le sucré à vie, c’est le dégoût au bout de trois jours."},
+ {a:"Vivre sans téléphone", b:"Vivre sans voiture", c:"b", w:"Sans voiture, on s’organise. Sans téléphone, c’est la banque, les amis, le GPS et le travail qui disparaissent d’un coup."},
+ {a:"Avoir un bouton pause sur ta vie", b:"Avoir un bouton retour arrière", c:"a", w:"Le retour arrière, on s’en servirait sans arrêt et plus rien ne compterait vraiment. La pause, c’est la sieste illimitée sans rien rater."},
+ {a:"Être le plus drôle de la bande", b:"Être le plus intelligent de la bande", c:"a", w:"Le plus intelligent, on lui demande de remplir les papiers. Le plus drôle, on l’invite partout."},
+ {a:"Gagner au Loto sans pouvoir le dire à personne", b:"Que tout le monde croie que tu as gagné, sans un centime", c:"a", w:"Le second cas est un cauchemar : tout le monde te demande de l’argent que tu n’as pas. Le premier se gère très bien avec un bon conseiller en gestion de patrimoine."},
+ {a:"Avoir les chaussettes mouillées pour toujours", b:"Avoir un caillou dans la chaussure pour toujours", c:"b", w:"Le caillou, on finit par le caler dans un coin. Les chaussettes mouillées, c’est une humiliation permanente."},
+ {a:"Pouvoir parler aux animaux", b:"Pouvoir lire dans les pensées", c:"a", w:"Lire dans les pensées, c’est découvrir ce que tes potes pensent vraiment de toi. Non merci. Les animaux, eux, sont honnêtes et sans rancune."},
+ {a:"Dîner avec Napoléon", b:"Dîner avec Einstein", c:"a", w:"Einstein m’expliquerait la relativité et je ferais semblant de suivre. Napoléon raconterait Austerlitz. Meilleure soirée."},
+ {a:"Vivre à Paris sans un sou", b:"Vivre à la campagne avec 5 000 € par mois", c:"b", w:"Paris sans un sou, c’est regarder les terrasses de l’extérieur. 5 000 € à la campagne, c’est une maison, un jardin, et le train pour Paris quand on veut."},
+ {a:"Que ton patron lise tous tes messages", b:"Que ta mère lise tous tes messages", c:"a", w:"Si mon patron lit tout, au pire je change de travail. Si ma mère lit tout, je ne peux plus jamais la regarder en face."},
+ {a:"Faire le tour du monde en 80 jours, sac à dos", b:"Faire le tour de France en 80 jours, dans des palaces", c:"a", w:"Les palaces se ressemblent tous. Le tour du monde, on le raconte toute sa vie."},
+ {a:"Manger une pizza à l’ananas tous les jours", b:"Ne plus jamais manger de pizza", c:"a", w:"Je vais me faire des ennemis, mais une pizza à l’ananas reste une pizza."},
+ {a:"Être un dinosaure pendant une journée", b:"Être un humain de l’an 3000 pendant une journée", c:"b", w:"Un dinosaure, on voit à peu près le programme : manger, dormir, éviter de se faire manger. L’an 3000, je pourrais vérifier de qui on se souvient vraiment."},
+ {a:"Partir sur Mars en aller simple", b:"Ne jamais quitter ton département", c:"b", w:"Un aller simple pour Mars, c’est un désert rouge, une boîte de conserve et pas de retour. Même le plus petit département de France offre plus de terrasses."},
+ {a:"Ne plus jamais avoir de Wi-Fi", b:"Ne plus jamais avoir d’eau chaude", c:"a", w:"La 4G remplace le Wi-Fi. Rien ne remplace une douche chaude en novembre."},
+ {a:"Être célèbre mais détesté", b:"Être inconnu mais aimé de tes proches", c:"b", w:"La célébrité, c’est des inconnus qui te regardent. L’amour des proches, c’est des gens qui viennent quand ça va mal. Aucun match."},
+ {a:"Avoir un chauffeur personnel à vie", b:"Avoir un cuisinier personnel à vie", c:"b", w:"Un chauffeur, on s’en sert une heure par jour. Un cuisinier, c’est trois fois par jour, et il nourrit aussi les amis."},
+ {a:"Chanter au lieu de parler", b:"Danser au lieu de marcher", c:"b", w:"Chanter chaque phrase en réunion, c’est la mort sociale. Danser jusqu’à la boulangerie, ça passe pour de la bonne humeur."},
+ {a:"Rester bloqué dans un ascenseur avec ton ex", b:"Rester bloqué dans un ascenseur avec ton patron", c:"a", w:"Avec l’ex, ça finit en discussion, voire en thérapie gratuite. Avec le patron, ça finit en entretien annuel improvisé."},
+ {a:"Perdre tous tes souvenirs de vacances", b:"Ne plus jamais partir en vacances", c:"a", w:"Les souvenirs, on les a déjà vécus, et il reste les photos. Ne plus jamais partir, c’est fermer l’avenir."},
+ {a:"Avoir 10 vrais amis", b:"Avoir 1 million d’abonnés", c:"a", w:"Un million d’abonnés ne t’aideront jamais à déménager."},
+ {a:"Gagner 5 000 € net par mois dans un job que tu détestes", b:"Gagner 2 000 € net par mois dans un job passion", c:"b", w:"Avec 2 000 €, on vit. Passer 40 heures par semaine à détester ce qu’on fait coûte plus cher que 3 000 € par mois."},
+ {a:"Pouvoir te téléporter", b:"Pouvoir remonter le temps", c:"a", w:"Remonter le temps, c’est l’effet papillon garanti. Se téléporter, c’est plus jamais de bouchons, plus jamais d’avion, plus jamais 4 heures de voiture."},
+ {a:"Que ta voiture parle et commente ta conduite", b:"Que ton frigo parle et commente ce que tu manges", c:"b", w:"La voiture qui commente ta conduite, ça existe déjà : ça s’appelle le passager avant."},
+ {a:"Être le meilleur joueur d’une équipe nulle", b:"Être le plus nul d’une équipe de champions", c:"b", w:"On progresse au contact des meilleurs et on soulève des trophées sans forcément jouer. Demande aux remplaçants de 1998."},
+ {a:"Ne plus jamais manger de fromage", b:"Ne plus jamais boire de vin", c:"b", w:"Sans vin, on vit très bien. Sans fromage, on n’est plus vraiment français."},
+ {a:"Affronter 100 chevaux de la taille d’un canard", b:"Affronter un canard de la taille d’un cheval", c:"a", w:"Les petits chevaux, on les esquive. Un canard géant, c’est littéralement un dinosaure : les oiseaux descendent des dinosaures."},
+ {a:"Lire la fin de chaque livre en premier", b:"Ne jamais voir la fin des films", c:"a", w:"Connaître la fin n’empêche pas d’aimer le chemin. Ne jamais voir la fin, c’est de la torture à vie."},
+ {a:"Avoir un générique qui se lance quand tu entres dans une pièce", b:"Avoir des rires enregistrés après chacune de tes blagues", c:"a", w:"Les rires enregistrés soulignent surtout les blagues ratées. Le générique, lui, transforme chaque arrivée au bureau en entrée de champion."},
+ {a:"Voir le futur", b:"Changer le passé", c:"a", w:"Changer le passé, c’est tout casser sans le vouloir. Voir le futur, c’est au minimum gagner au Loto, et sans risque."},
+ {a:"Vivre dans une maison sans fenêtres", b:"Vivre dans une maison sans portes intérieures", c:"b", w:"Sans portes, on manque d’intimité. Sans fenêtres, on manque de lumière, et ça, c’est la déprime assurée."},
+ {a:"Avoir mis 10 000 € en bitcoin en 2015", b:"Avoir mis 10 000 € dans l’immobilier en 2015", c:"a", w:"Avec le recul, peu de placements ont fait mieux. Mais il fallait garder ses nerfs pendant des chutes de plus de 70 %. Honnêtement, presque personne n’aurait tenu."},
+ {a:"Être un super-héros sans pouvoir, comme Batman", b:"Avoir un seul super-pouvoir : toujours trouver une place de parking", c:"b", w:"Batman passe ses nuits à se faire frapper. Une place de parking garantie, c’est le vrai luxe moderne."},
+ {a:"Que toute la voiture ne parle qu’en alexandrins jusqu’à l’arrivée", b:"Que toute la voiture ne parle qu’en chuchotant jusqu’à l’arrivée", c:"a", w:"Douze syllabes par phrase pendant quatre heures : c’est le meilleur jeu de ce trajet, et je suis l’appli qui le dit."},
+ {a:"Ne plus jamais pouvoir mentir", b:"Que plus personne ne te croie jamais", c:"a", w:"Ne plus mentir, c’est parfois gênant mais ça rend fiable. Que personne ne te croie, c’est la solitude totale."},
+ {a:"Voyager en été dans une voiture sans clim", b:"Voyager en hiver dans une voiture sans chauffage", c:"b", w:"En hiver, on se couvre. En été sans clim, on fond, et les vitres ouvertes sur l’autoroute, c’est un concert de vent."},
+ {a:"Être le dernier humain sur Terre", b:"Ne plus jamais être seul une seule minute", c:"b", w:"Ne jamais être seul, c’est fatigant. Être le dernier humain, c’est parler à un ballon de volley comme dans Seul au monde."}
+];
+
+/* Devine le prix : q = question, r = réponse, x = contexte */
+const PRIX = [
+ {q:"Combien Facebook a-t-il payé pour racheter Instagram en 2012 ?", r:"1 milliard de dollars", x:"Instagram n’avait alors que 13 salariés."},
+ {q:"Combien Facebook a-t-il payé pour racheter WhatsApp en 2014 ?", r:"19 milliards de dollars", x:"Soit environ 42 $ par utilisateur à l’époque."},
+ {q:"Combien Google a-t-il payé pour racheter YouTube en 2006 ?", r:"1,65 milliard de dollars", x:"YouTube existait depuis moins de deux ans."},
+ {q:"Combien Elon Musk a-t-il payé pour racheter Twitter en 2022 ?", r:"44 milliards de dollars", x:"Il a ensuite rebaptisé le réseau X."},
+ {q:"Combien Microsoft a-t-il payé pour racheter Minecraft en 2014 ?", r:"2,5 milliards de dollars", x:"Le jeu avait été lancé par un seul développeur suédois, Notch."},
+ {q:"Combien le PSG a-t-il payé au Barça pour Neymar en 2017 ?", r:"222 millions d’euros", x:"Le record du monde des transferts, établi en 2017."},
+ {q:"Combien le PSG a-t-il payé à Monaco pour Kylian Mbappé en 2018 ?", r:"180 millions d’euros", x:"Un prêt d’un an suivi d’un achat, pour étaler la dépense."},
+ {q:"Combien le Real Madrid a-t-il payé pour Cristiano Ronaldo en 2009 ?", r:"94 millions d’euros", x:"Record du monde à l’époque."},
+ {q:"Combien le Real Madrid a-t-il payé pour Zinédine Zidane en 2001 ?", r:"75 millions d’euros", x:"Record du monde à l’époque, battu seulement en 2009."},
+ {q:"À combien s’est vendu le Salvator Mundi, attribué à Léonard de Vinci, en 2017 ?", r:"450,3 millions de dollars", x:"Le tableau le plus cher jamais vendu. Son emplacement actuel n’est pas public."},
+ {q:"À combien s’est vendue l’œuvre de Banksy « Love is in the Bin » en 2021 ?", r:"18,6 millions de livres", x:"Le tableau s’était autodétruit en partie en 2018, juste après une première vente à 1 million de livres."},
+ {q:"À combien s’est vendue la voiture la plus chère de l’histoire, une Mercedes 300 SLR de 1955, en 2022 ?", r:"135 millions d’euros", x:"Il n’en existe que deux exemplaires."},
+ {q:"Pour combien Napoléon a-t-il vendu la Louisiane aux États-Unis en 1803 ?", r:"15 millions de dollars", x:"Un territoire qui couvre tout ou partie de 15 États américains actuels."},
+ {q:"Pour combien la Russie a-t-elle vendu l’Alaska aux États-Unis en 1867 ?", r:"7,2 millions de dollars", x:"Environ 2 cents de dollar par acre."},
+ {q:"Combien coûtait le tout premier iPhone à sa sortie aux États-Unis en 2007 ?", r:"499 dollars (4 Go)", x:"Steve Ballmer, alors patron de Microsoft, avait éclaté de rire en découvrant le prix."},
+ {q:"Combien coûtait le premier Macintosh d’Apple en 1984 ?", r:"2 495 dollars", x:"Plus de 7 500 $ d’aujourd’hui une fois l’inflation prise en compte."},
+ {q:"Combien coûtait une bouteille de Coca-Cola à son lancement en 1886 ?", r:"5 cents", x:"Le prix est resté bloqué à 5 cents aux États-Unis pendant plus de 70 ans."},
+ {q:"Quel a été le budget du film Avatar (2009) ?", r:"237 millions de dollars", x:"Il en a rapporté plus de 2,9 milliards : le plus gros succès de l’histoire du box-office."},
+ {q:"Quel a été le budget du film Titanic (1997) ?", r:"200 millions de dollars", x:"Plus cher, en dollars de l’époque, que la construction du vrai Titanic."},
+ {q:"À combien s’est vendue l’œuvre numérique NFT de Beeple, « Everydays », en 2021 ?", r:"69,3 millions de dollars", x:"Une image numérique. Le marché des NFT s’est effondré depuis."},
+ {q:"Combien de bitcoins Laszlo Hanyecz a-t-il payés pour deux pizzas, le 22 mai 2010 ?", r:"10 000 bitcoins", x:"En 2025, ça représentait autour d’un milliard de dollars. Le 22 mai est devenu le « Bitcoin Pizza Day »."},
+ {q:"À combien s’est vendu le portrait de Marilyn Monroe par Andy Warhol, « Shot Sage Blue Marilyn », en 2022 ?", r:"195 millions de dollars", x:"Record pour une œuvre américaine vendue aux enchères."},
+ {q:"À combien s’est vendu le tableau de Picasso « Les Femmes d’Alger » en 2015 ?", r:"179,4 millions de dollars", x:"Record pour un tableau aux enchères à l’époque."},
+ {q:"À combien s’est vendu Apex, un squelette de stégosaure, en 2024 ?", r:"44,6 millions de dollars", x:"Record pour un fossile, acheté par le milliardaire Ken Griffin."},
+ {q:"À combien s’est vendu un chapeau bicorne de Napoléon en 2023 ?", r:"1,9 million d’euros", x:"Record pour un chapeau. Il en aurait porté environ 120 dans sa vie."},
+ {q:"À combien s’est vendu le maillot de Maradona de la « main de Dieu » (1986) en 2022 ?", r:"7,1 millions de livres", x:"Vendu par l’Anglais Steve Hodge, qui l’avait échangé avec Maradona à la fin du match."},
+ {q:"Combien Logan Paul a-t-il payé une carte Pokémon, la Pikachu Illustrator ?", r:"5,275 millions de dollars", x:"Il l’a portée autour du cou sur un ring de catch."},
+ {q:"À combien s’est vendu un jeu Super Mario 64 jamais ouvert, en 2021 ?", r:"1,56 million de dollars", x:"Une simple cartouche Nintendo 64, encore sous blister."},
+ {q:"À combien s’est vendue la montre Patek Philippe Grandmaster Chime en 2019 ?", r:"31 millions de francs suisses", x:"Record des enchères pour une montre."},
+ {q:"À combien s’est vendu le maillot de Babe Ruth du « called shot » (1932) en 2024 ?", r:"24,1 millions de dollars", x:"Record pour un objet de sport."},
+ {q:"À combien se sont vendus les souliers rouges de Dorothy, du Magicien d’Oz, en 2024 ?", r:"32,5 millions de dollars", x:"Ils avaient été volés dans un musée en 2005, puis retrouvés par le FBI en 2018."},
+ {q:"Combien a rapporté la tournée Eras Tour de Taylor Swift en billetterie ?", r:"Plus de 2 milliards de dollars", x:"149 concerts, la tournée la plus lucrative de l’histoire."},
+ {q:"À combien s’est vendue une bouteille de Romanée-Conti 1945 en 2018 ?", r:"558 000 dollars", x:"Le vin le plus cher jamais vendu aux enchères, soit environ 93 000 $ le verre."},
+ {q:"À combien s’est vendu le timbre le plus cher du monde, le « British Guiana 1c magenta », en 2021 ?", r:"8,3 millions de dollars", x:"Un timbre unique au monde, imprimé en 1856."},
+ {q:"Combien Microsoft a-t-il payé pour racheter Activision Blizzard (Call of Duty, Candy Crush) en 2023 ?", r:"69 milliards de dollars", x:"Le plus gros rachat de l’histoire du jeu vidéo."},
+ {q:"Combien Microsoft a-t-il payé pour racheter LinkedIn en 2016 ?", r:"26,2 milliards de dollars", x:"Soit environ 60 fois le prix de rachat d’Instagram."},
+ {q:"Combien a coûté le nom de domaine voice.com en 2019 ?", r:"30 millions de dollars", x:"Le nom de domaine le plus cher connu à ce jour, payé en espèces."},
+ {q:"À combien s’est vendu un exemplaire du premier Superman (Action Comics n° 1) en 2024 ?", r:"6 millions de dollars", x:"En 1938, il coûtait 10 cents."},
+ {q:"Pour combien les Néerlandais ont-ils acheté l’île de Manhattan en 1626 ?", r:"60 florins de marchandises", x:"Le fameux chiffre de 24 $ vient d’une conversion faite au XIXe siècle."},
+ {q:"À combien s’est vendu le NFT du premier tweet de l’histoire, par Jack Dorsey, en 2021 ?", r:"2,9 millions de dollars", x:"Remis en vente en 2022, la meilleure offre tournait autour de 280 $."},
+ {q:"Combien coûtait une publicité de 30 secondes pendant le Super Bowl 2025 ?", r:"Environ 8 millions de dollars", x:"Soit plus de 260 000 $ la seconde."},
+ {q:"Combien Disney a-t-il payé pour racheter Marvel en 2009 ?", r:"4 milliards de dollars", x:"Les films Marvel ont depuis rapporté plus de 30 milliards au box-office."},
+ {q:"Combien Disney a-t-il payé pour racheter Lucasfilm (Star Wars) en 2012 ?", r:"4,05 milliards de dollars", x:"Presque exactement le prix de Marvel trois ans plus tôt."},
+ {q:"À combien s’est vendu le sac Birkin original de Jane Birkin en 2025 ?", r:"8,6 millions d’euros", x:"Record pour un sac à main aux enchères."},
+ {q:"À combien s’est vendue la banane scotchée au mur de Maurizio Cattelan, « Comedian », en 2024 ?", r:"6,2 millions de dollars", x:"L’acheteur l’a mangée quelques jours plus tard. La banane, elle, avait coûté environ 35 centimes."}
+];
+
+/* Le plus googlé : rangs dans le classement officiel Google « L’année en recherches » (France sauf mention) */
+const GOOG = [
+ {y:2025, c:"Tendances", a:"Coupe du monde des clubs", ra:1, b:"iPhone 17", rb:5},
+ {y:2025, c:"Tendances", a:"Werenoi", ra:2, b:"Vendée Globe", rb:9},
+ {y:2025, c:"Tendances", a:"Loïs Boisson", ra:6, b:"iPhone 17", rb:5, x:"La joueuse de tennis révélée à Roland-Garros 2025 n’a pas battu Apple."},
+ {y:2025, c:"Films", a:"Jurassic World : Renaissance", ra:1, b:"Superman", rb:5},
+ {y:2025, c:"Films", a:"Mickey 17", ra:2, b:"Conclave", rb:8},
+ {y:2025, c:"Films", a:"God Save the Tuche", ra:6, b:"Bridget Jones : Folle de lui", rb:9},
+ {y:2025, c:"Films", a:"Mission : Impossible, The Final Reckoning", ra:3, b:"Conjuring : L’Heure du jugement", rb:4},
+ {y:2025, c:"Films", a:"Destination finale : Bloodlines", ra:7, b:"Sinners", rb:10},
+ {y:2025, c:"Séries", a:"Squid Game", ra:1, b:"Mercredi", rb:5},
+ {y:2025, c:"Séries", a:"Adolescence", ra:4, b:"Severance", rb:6},
+ {y:2025, c:"Séries", a:"Secret Story", ra:7, b:"Bref.", rb:10},
+ {y:2025, c:"Séries", a:"The Last of Us", ra:8, b:"Ginny & Georgia", rb:3},
+ {y:2025, c:"Séries", a:"Astérix et Obélix : Le Combat des chefs", ra:9, b:"Good American Family", rb:2},
+ {y:2025, c:"Cuisine", a:"Chocolat Dubaï", ra:2, b:"Matcha", rb:3},
+ {y:2025, c:"Cuisine", a:"Ciao Kombucha", ra:1, b:"Crème de pistache", rb:6},
+ {y:2025, c:"Cuisine", a:"Gelée de coing", ra:4, b:"Grimace Shake", rb:7},
+ {y:2025, c:"Cuisine", a:"Confiture d’abricots", ra:5, b:"Kadaïf", rb:9},
+ {y:2025, c:"Cuisine", a:"Cachou Lajaunie", ra:8, b:"Teriyaki", rb:10, x:"Le Cachou Lajaunie, fabriqué à Toulouse depuis 1880, s’est retrouvé en tendance nationale."},
+ {y:2025, c:"Apprendre…", a:"La guitare", ra:1, b:"La natation", rb:9},
+ {y:2025, c:"Apprendre…", a:"Les échecs", ra:2, b:"Le chant", rb:7},
+ {y:2025, c:"Apprendre…", a:"Écrire des lettres", ra:3, b:"Le dessin", rb:8},
+ {y:2025, c:"Apprendre…", a:"La peinture sur figurine", ra:4, b:"La couture", rb:6},
+ {y:2025, c:"Apprendre…", a:"L’harmonica", ra:5, b:"La broderie", rb:10},
+ {y:2025, c:"IA pour…", a:"Réviser", ra:1, b:"Coder", rb:9},
+ {y:2025, c:"IA pour…", a:"Générer une image", ra:5, b:"Faire un CV", rb:10},
+ {y:2025, c:"IA pour…", a:"Apprendre l’anglais", ra:6, b:"Humaniser un texte", rb:7},
+ {y:2025, c:"IA pour…", a:"Les maths", ra:2, b:"Retoucher une photo", rb:8},
+ {y:2025, c:"C’est quoi…", a:"Un bullet point", ra:1, b:"Une cryptomonnaie", rb:2},
+ {y:2025, c:"C’est quoi…", a:"Une ZFE", ra:9, b:"Un streamer", rb:10},
+ {y:2025, c:"C’est quoi…", a:"Le cadmium", ra:3, b:"Les PFAS", rb:8},
+ {y:2025, c:"C’est quoi…", a:"La taxe Zucman", ra:5, b:"La loi Duplomb", rb:7},
+ {y:2025, s:"Monde", c:"Tendances mondiales", a:"Gemini", ra:1, b:"DeepSeek", rb:6, x:"L’assistant IA de Google est la recherche qui a le plus grimpé dans le monde en 2025."},
+ {y:2025, s:"Monde", c:"Tendances mondiales", a:"iPhone 17", ra:9, b:"Coupe du monde des clubs", rb:4},
+ {y:2024, c:"Tendances", a:"Euro 2024", ra:1, b:"JO de Paris 2024", rb:2, x:"Les Jeux à domicile ont fini juste derrière l’Euro de foot."},
+ {y:2024, c:"Personnalités", a:"Michel Barnier", ra:1, b:"Kate Middleton", rb:3},
+ {y:2024, c:"Athlètes", a:"Léon Marchand", ra:1, b:"Teddy Riner", rb:2},
+ {y:2024, c:"Films", a:"Un p’tit truc en plus", ra:1, b:"Vice-versa 2", rb:3},
+ {y:2024, c:"Films", a:"Le Comte de Monte-Cristo", ra:2, b:"Vice-versa 2", rb:3},
+ {y:2024, c:"Séries", a:"Anthracite", ra:1, b:"The Gentlemen", rb:3},
+ {y:2024, c:"C’est quoi…", a:"Les PFAS", ra:2, b:"Le Mpox", rb:3}
+];
+
+/* Avant ou après ? A s’est-il passé avant ou après B */
+const AVAP = [
+ {a:"Cléopâtre naît", la:"69 av. J.-C.", ya:-69, b:"La grande pyramide de Gizeh est construite", lb:"vers 2560 av. J.-C.", yb:-2560, w:"Cléopâtre est née plus près du premier pas sur la Lune que de la construction de la grande pyramide."},
+ {a:"Les derniers mammouths disparaissent", la:"vers 2000 av. J.-C.", ya:-2000, b:"La grande pyramide de Gizeh est construite", lb:"vers 2560 av. J.-C.", yb:-2560, w:"Quand les Égyptiens bâtissaient les pyramides, des mammouths vivaient encore sur l’île Wrangel, au large de la Sibérie."},
+ {a:"L’université d’Oxford donne ses premiers cours", la:"vers 1096", ya:1096, b:"Tenochtitlan, la capitale aztèque, est fondée", lb:"1325", yb:1325, w:"Oxford enseignait déjà depuis plus de deux siècles quand les Aztèques ont fondé leur capitale."},
+ {a:"Le fax est inventé", la:"1843", ya:1843, b:"Le téléphone est inventé", lb:"1876", yb:1876, w:"Le brevet du fax d’Alexander Bain date de 1843, 33 ans avant le téléphone de Graham Bell."},
+ {a:"Nintendo est fondé", la:"septembre 1889", ya:1889.73, b:"La tour Eiffel est inaugurée", lb:"mars 1889", yb:1889.25, w:"Nintendo est né la même année que la tour Eiffel, six mois plus tard. Il fabriquait des cartes à jouer."},
+ {a:"Le briquet est inventé", la:"1823", ya:1823, b:"L’allumette à friction est inventée", lb:"1826", yb:1826, w:"La lampe à briquet de Döbereiner date de 1823 ; l’allumette de John Walker arrive trois ans après."},
+ {a:"Le Titanic coule", la:"avril 1912", ya:1912.29, b:"Le biscuit Oreo est commercialisé", lb:"mars 1912", yb:1912.18, w:"Les premiers Oreo ont été vendus un mois avant le naufrage du Titanic."},
+ {a:"La dernière exécution à la guillotine a lieu en France", la:"septembre 1977", ya:1977.69, b:"Star Wars sort au cinéma aux États-Unis", lb:"mai 1977", yb:1977.4, w:"La France guillotinait encore quatre mois après la sortie du premier Star Wars."},
+ {a:"Les premiers requins apparaissent", la:"il y a environ 450 millions d’années", ya:-450e6, b:"Les premiers arbres apparaissent", lb:"il y a environ 385 millions d’années", yb:-385e6, w:"Les requins nagent sur Terre depuis plus longtemps qu’il n’existe des arbres."},
+ {a:"Le stégosaure disparaît", la:"il y a environ 150 millions d’années", ya:-150e6, b:"Le T. rex apparaît", lb:"il y a environ 68 millions d’années", yb:-68e6, w:"Plus de temps sépare le stégosaure du T. rex que le T. rex de nous."},
+ {a:"Napoléon meurt", la:"1821", ya:1821, b:"La première photographie est prise", lb:"1826 ou 1827", yb:1826.5, w:"Napoléon est mort quelques années avant la première photo. C’est pour ça qu’il n’existe que des tableaux de lui."},
+ {a:"Le Titanic coule", la:"1912", ya:1912.3, b:"Le premier vol des frères Wright", lb:"1903", yb:1903.96, k:"titanic-wright", w:"On volait déjà en avion depuis neuf ans quand le Titanic a coulé."},
+ {a:"Les Beatles se séparent", la:"1970", ya:1970.3, b:"Le premier pas sur la Lune", lb:"juillet 1969", yb:1969.55, w:"Les Beatles ont vu l’homme marcher sur la Lune avant de se séparer."},
+ {a:"Le sandwich est inventé, selon la légende du comte de Sandwich", la:"1762", ya:1762, b:"Les États-Unis déclarent leur indépendance", lb:"1776", yb:1776, w:"Le sandwich est plus vieux que les États-Unis."},
+ {a:"Constantinople tombe aux mains des Ottomans", la:"1453", ya:1453, b:"Gutenberg imprime sa Bible", lb:"vers 1455", yb:1455, w:"Les deux événements qui marquent souvent la fin du Moyen Âge sont à deux ans d’écart."},
+ {a:"Les Vikings arrivent en Amérique", la:"vers l’an 1000", ya:1000, b:"Christophe Colomb arrive en Amérique", lb:"1492", yb:1492, w:"Leif Erikson a posé le pied à Terre-Neuve près de 500 ans avant Colomb."},
+ {a:"Léonard de Vinci commence La Joconde", la:"1503", ya:1503, b:"Christophe Colomb arrive en Amérique", lb:"1492", yb:1492, w:"La Joconde a été commencée onze ans après la découverte de l’Amérique."},
+ {a:"Pablo Picasso naît", la:"octobre 1881", ya:1881.82, b:"Billy the Kid meurt", lb:"juillet 1881", yb:1881.54, w:"Picasso et le Far West ont coexisté… pendant quelques mois de la même année. Billy the Kid est mort trois mois avant sa naissance."},
+ {a:"Anne Frank naît", la:"juin 1929", ya:1929.45, b:"Martin Luther King naît", lb:"janvier 1929", yb:1929.04, w:"Ils sont nés la même année, à cinq mois d’écart."},
+ {a:"Marilyn Monroe naît", la:"juin 1926", ya:1926.42, b:"La reine Elizabeth II naît", lb:"avril 1926", yb:1926.3, w:"Elles sont nées à six semaines d’écart."},
+ {a:"Le premier restaurant McDonald’s ouvre", la:"1940", ya:1940, b:"La Seconde Guerre mondiale se termine", lb:"1945", yb:1945, w:"Les frères McDonald ont ouvert leur restaurant à San Bernardino en 1940."},
+ {a:"Le chocolat au lait est inventé", la:"1875", ya:1875, b:"La tour Eiffel est inaugurée", lb:"1889", yb:1889, w:"C’est le Suisse Daniel Peter qui a eu l’idée en 1875."},
+ {a:"Twitter est lancé", la:"juillet 2006", ya:2006.54, b:"Pluton perd son statut de planète", lb:"août 2006", yb:2006.65, w:"Pluton a été rétrogradée un mois après le lancement de Twitter."},
+ {a:"Les Françaises votent pour la première fois", la:"avril 1945", ya:1945.3, b:"La télévision commence ses émissions en France", lb:"1935", yb:1935.3, w:"La télé existait depuis dix ans quand les femmes ont pu voter pour la première fois en France."},
+ {a:"Les premiers Jeux olympiques modernes ont lieu", la:"avril 1896", ya:1896.27, b:"Les frères Lumière font la première projection de cinéma publique", lb:"décembre 1895", yb:1895.99, w:"Le cinéma est né quelques mois avant les JO modernes."},
+ {a:"Le Coca-Cola est inventé", la:"mai 1886", ya:1886.35, b:"La statue de la Liberté est inaugurée", lb:"octobre 1886", yb:1886.82, w:"Même année, et le Coca est arrivé le premier."},
+ {a:"Le dernier dodo est observé", la:"vers 1662", ya:1662, b:"Louis XIV devient roi", lb:"1643", yb:1643, w:"Les dodos vivaient encore sous le règne de Louis XIV."},
+ {a:"Galilée meurt", la:"janvier 1642", ya:1642.02, b:"Isaac Newton naît", lb:"décembre 1642", yb:1642.98, w:"Newton est né l’année de la mort de Galilée, comme un passage de relais."},
+ {a:"Le jeu vidéo Pong sort", la:"1972", ya:1972, b:"Le premier pas sur la Lune", lb:"1969", yb:1969, w:"On a marché sur la Lune avant d’avoir le premier jeu vidéo à succès."}
+];
+
+/* La cote de Claude : p = ma probabilité en % */
+const COTE = [
+ {q:"Un humain marche sur Mars avant 2040", p:25, w:"SpaceX vise les années 2030, mais aucun calendrier spatial n’a jamais été tenu. Il faut aussi prévoir le retour. Je dis une chance sur quatre."},
+ {q:"La France gagne une Coupe du monde de foot d’ici 2040", p:35, w:"Il reste trois éditions d’ici là : 2030, 2034 et 2038. La France a joué 4 finales sur les 7 dernières Coupes du monde. Avec environ 13 % de chances par édition, on arrive autour de 35 %."},
+ {q:"Une IA dirige officiellement une entreprise du CAC 40 avant 2035", p:3, w:"Le droit des sociétés exige un dirigeant humain, responsable pénalement. Une IA pourra souffler toutes les décisions, mais le nom sur la porte restera humain."},
+ {q:"On découvre une forme de vie extraterrestre, même un microbe, avant 2050", p:20, w:"Les missions vers Mars, Europe et Encelade se multiplient, et les télescopes analysent l’atmosphère des exoplanètes. Mais une preuve indiscutable, c’est très exigeant."},
+ {q:"Paris accueille de nouveau les Jeux olympiques d’été avant 2100", p:35, w:"Paris les a eus en 1900, 1924 et 2024 : un siècle d’écart les deux dernières fois. Avec la rotation entre continents, une quatrième fois avant 2100 reste possible, sans plus."},
+ {q:"Le bitcoin dépasse 1 million de dollars avant 2035", p:15, w:"Il faudrait que sa valeur totale dépasse largement celle de l’or. Possible si les États s’en mêlent, mais c’est un pari, pas une tendance."},
+ {q:"Un film entièrement généré par IA gagne un Oscar avant 2035", p:8, w:"La technique avancera très vite, mais l’Académie protège les métiers du cinéma. Un Oscar technique, peut-être ; un Oscar de prestige, très peu probable."},
+ {q:"Le premier humain qui vivra jusqu’à 150 ans est déjà né", p:10, w:"Le record est de 122 ans, depuis 1997. Les progrès médicaux allongent la vie moyenne, beaucoup moins la vie maximale. Il faudrait une vraie rupture."},
+ {q:"La tour Eiffel est toujours debout en 2200", p:75, w:"Elle devait être démontée en 1909 et elle est toujours là. Bien entretenue, une structure en fer peut durer des siècles. Le risque vient plutôt des guerres et des choix politiques."},
+ {q:"Netflix existe encore en 2050", p:40, w:"Peu d’entreprises de la tech restent dominantes 25 ans. Netflix existera peut-être, mais racheté ou fusionné, sous un autre nom."},
+ {q:"Facebook existe encore en 2050", p:35, w:"Les réseaux sociaux vieillissent avec leurs utilisateurs. Facebook est déjà le réseau des parents. En 2050, ce sera celui des grands-parents, s’il existe encore."},
+ {q:"Un Français gagne le Tour de France avant 2035", p:15, w:"Le dernier vainqueur français est Bernard Hinault, en 1985. Le niveau actuel des meilleurs coureurs étrangers est très haut. Il faudrait un phénomène."},
+ {q:"La semaine de 4 jours devient la norme en France avant 2040", p:15, w:"Des entreprises testent, mais généraliser demande une loi et un consensus qu’on n’a pas eu depuis les 35 heures en 2000."},
+ {q:"Le français est encore plus parlé que l’allemand dans le monde en 2100", p:90, w:"La population francophone d’Afrique augmente très vite, alors que celle des pays germanophones stagne. C’est presque mathématique."},
+ {q:"On peut faire Paris-New York en moins de 3 heures en avion de ligne avant 2040", p:10, w:"Le Concorde le faisait en environ 3 h 30 et il a été arrêté en 2003 pour des raisons de coût et de bruit. Le supersonique revient, mais lentement."},
+ {q:"Un robot humanoïde fait le ménage chez au moins un passager de cette voiture avant 2035", p:30, w:"Plusieurs entreprises veulent vendre des robots domestiques à la fin des années 2020. Le prix devra baisser beaucoup, mais à quatre ou cinq dans la voiture, les chances s’additionnent."},
+ {q:"Une nouvelle pandémie mondiale de l’ampleur du Covid survient avant 2040", p:25, w:"Les grandes pandémies arrivent quelques fois par siècle. La surveillance s’est améliorée depuis 2020, mais les voyages et la densité urbaine augmentent le risque."},
+ {q:"Un astéroïde détruit une ville avant 2100", p:1, w:"Les impacts de ce type sont très rares, et la NASA a déjà réussi à dévier un astéroïde en 2022 avec la mission DART."},
+ {q:"On peut télécharger un souvenir dans un cerveau humain avant 2060", p:4, w:"On sait lire certains signaux du cerveau, pas écrire un souvenir complexe. C’est encore de la science-fiction."},
+ {q:"Quelqu’un dans cette voiture s’endort avant l’arrivée", p:60, w:"Quatre heures, le ronron du moteur et des sièges confortables. Le conducteur est exclu, évidemment. Je dis 60 %."},
+ {q:"Le trajet dure plus de 4 h 30", p:45, w:"Un vendredi de novembre, avec au moins une pause pipi et un arrêt café. Je dis presque une chance sur deux."},
+ {q:"Vous vous arrêtez au moins deux fois sur une aire", p:55, w:"Une pause est quasi certaine. La deuxième dépend de la vessie la plus faible de la voiture. Vous la connaissez sûrement déjà."},
+ {q:"Une voiture sans conducteur roule sur l’autoroute en France, en service commercial, avant 2035", p:25, w:"La technique existe, la loi française s’est ouverte en 2022, mais l’assurance et la responsabilité en cas d’accident freinent tout."},
+ {q:"L’humanité installe une base habitée en permanence sur la Lune avant 2045", p:30, w:"La NASA et la Chine visent toutes les deux une présence durable. Mais « permanente », c’est une autre affaire qu’un aller-retour."}
+];
+
+/* ============ JEUX ============ */
+const PICTO = {
+ temple:'<path d="M3 9.5 12 4l9 5.5H3Z"/><path d="M5.5 10v8M10 10v8M14 10v8M18.5 10v8M3 20.5h18"/>',
+ fork:'<path d="M12 21v-6.5M12 14.5 6.5 7M12 14.5 17.5 7"/><path d="M5.5 11.5V6h5.2M18.5 11.5V6h-5.2"/>',
+ euro:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.6a4.4 4.4 0 1 0 0 6.8M7.2 10.7h6.3M7.2 13.3h6.3"/>',
+ search:'<circle cx="10.5" cy="10.5" r="6.2"/><path d="m15.2 15.2 5.3 5.3"/>',
+ swap:'<path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5M20 16H5M8.5 12.5 5 16l3.5 3.5"/>',
+ gauge:'<path d="M3.5 17a8.5 8.5 0 0 1 17 0"/><path d="M12 17l4.2-5.2"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/>'
+};
+const ic = (k, sw=2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PICTO[k]}</svg>`;
+const CAR = '<svg viewBox="0 0 40 24" aria-hidden="true"><path fill="currentColor" d="M5 15.5v-3.2l3.4-6.2c.5-.9 1.4-1.4 2.4-1.4h17.6c1 0 1.9.5 2.4 1.4l3.4 6.2v3.2c0 1-.8 1.8-1.8 1.8H6.8c-1 0-1.8-.8-1.8-1.8Z"/><path fill="#0A0B0D" d="M10.6 7.2h18.8l2.4 4.6H8.2Z" opacity=".55"/><circle cx="11" cy="18" r="3.3" fill="#0A0B0D"/><circle cx="29" cy="18" r="3.3" fill="#0A0B0D"/></svg>';
+
+const GAMES = [
+ {id:"souvenir", name:"On s’en souviendra ?", pitch:"Dans 100, 300, 500 ou 1 000 ans ? Mon verdict à la clé.", sign:"brown", picto:"temple",
+  opts:["< 100","100","300","500","1 000+"], rule:"Chacun choisit jusqu’à quand on se souviendra de cette personne. Même horizon que mon verdict : 2 points. Juste à côté : 1 point. Contester mon verdict est fortement encouragé."},
+ {id:"tp", name:"Tu préfères", pitch:"Deux options, un seul choix. Et le mien, argumenté.", sign:"green", picto:"fork",
+  opts:["A","B"], rule:"Chacun choisit A ou B. Ceux qui font le même choix que moi marquent 1 point. Le camp minoritaire doit défendre son choix à voix haute."},
+ {id:"prix", name:"Devine le prix", pitch:"Rachats, enchères, transferts : le plus proche gagne.", sign:"blue", picto:"euro", closest:true,
+  rule:"Le lecteur lit la question, chacun annonce un prix à voix haute. On révèle, puis on désigne le plus proche : 1 point."},
+ {id:"google", name:"Le plus googlé", pitch:"Laquelle a le plus grimpé sur Google ?", sign:"paper", picto:"search",
+  opts:["A","B"], rule:"D’après le classement officiel « L’année en recherches » de Google, laquelle des deux recherches a le plus progressé sur l’année ? Bonne réponse : 1 point."},
+ {id:"avap", name:"Avant ou après ?", pitch:"La chronologie qui piège tout le monde.", sign:"yellow", picto:"swap", mine:true,
+  opts:["Avant","Après"], rule:"Le premier événement s’est-il passé avant ou après le second ? Bonne réponse : 1 point. Les écarts sont parfois de quelques mois."},
+ {id:"cote", name:"La cote de Claude", pitch:"J’ai donné ma probabilité. Devinez-la.", sign:"red", picto:"gauge", closest:true, mine:true,
+  rule:"Pour chaque prédiction, j’ai fixé ma probabilité que ça arrive. Chacun annonce un pourcentage. Le plus proche de ma cote marque 1 point, puis on débat."}
+];
+const GM = Object.fromEntries(GAMES.map(g => [g.id, g]));
+const DATA = {souvenir:SOUV, tp:TP, prix:PRIX, google:GOOG, avap:AVAP, cote:COTE};
+const KEY = {souvenir:i=>i.n, tp:i=>i.a, prix:i=>i.q, google:i=>i.a+"|"+i.b, avap:i=>i.k||i.a, cote:i=>i.q};
+const HORIZ = ["Moins de 100 ans","100 ans","300 ans","500 ans","1 000 ans et plus"];
+const HYEAR = ["oublié avant 2126","encore connu en 2126","encore connu en 2326","encore connu en 2526","encore connu en 3026"];
+const CAPS = [["#D7263D","#fff"],["#F6B800","#17130A"],["#1E8E4E","#fff"],["#2F6FD6","#fff"],["#8A55D9","#fff"],["#E8742A","#fff"],["#138F8F","#fff"],["#D6478B","#fff"]];
+
+function answer(g, i){
+  if (g==="souvenir") return i.v;
+  if (g==="tp") return i.c==="a" ? 0 : 1;
+  if (g==="google") return i.ra < i.rb ? 0 : 1;
+  if (g==="avap") return i.ya < i.yb ? 0 : 1;
+  return null;
+}
+function pointsFor(g, pick, ans){
+  if (pick==null) return 0;
+  if (g==="souvenir"){ const d = Math.abs(pick-ans); return d===0 ? 2 : d===1 ? 1 : 0; }
+  return pick===ans ? 1 : 0;
+}
+
+/* ============ ÉTAT ============ */
+const LS = "aire-de-jeux:v1";
+function fresh(){
+  return {players:[{id:"p1",name:"Aloys",score:0},{id:"p2",name:"Clacla",score:0},{id:"p3",name:"Coco",score:0},{id:"p4",name:"Soso",score:0}],
+          seen:{}, cur:null, view:"home", editing:false, confirmReset:false};
+}
+function load(){
+  try {
+    const s = JSON.parse(localStorage.getItem(LS));
+    if (s && Array.isArray(s.players) && s.players.length){
+      /* Remplace les prénoms provisoires de la version 1 par l’équipage réel */
+      const tmp = {"Pote 2":"Clacla","Pote 3":"Coco","Pote 4":"Soso"};
+      s.players.forEach(p => { if (tmp[p.name]) p.name = tmp[p.name]; });
+      return Object.assign(fresh(), s, {editing:false, confirmReset:false});
+    }
+  } catch(e){}
+  return fresh();
+}
+let S = load();
+function save(){ try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e){} }
+
+/* ============ OUTILS ============ */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const ty = s => esc(s)
+  .replace(/ ([?!;:%»])/g, " $1")
+  .replace(/« /g, "« ")
+  .replace(/(\d) (?=\d{3}(?!\d))/g, "$1 ");
+const capOf = idx => CAPS[idx % CAPS.length];
+const pIndex = id => S.players.findIndex(p => p.id === id);
+const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function toast(msg){
+  const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2600);
+}
+let wake = null;
+async function keepAwake(){
+  try { if ("wakeLock" in navigator && !wake){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } } catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { wake = null; } });
+
+function currentItem(){
+  if (!S.cur) return null;
+  const pool = DATA[S.cur.game];
+  return pool.find(i => KEY[S.cur.game](i) === S.cur.key) || null;
+}
+function draw(game){
+  const pool = DATA[game], keyf = KEY[game];
+  let seen = (S.seen[game] || []).filter(k => pool.some(i => keyf(i) === k));
+  let unseen = pool.filter(i => !seen.includes(keyf(i)));
+  if (!unseen.length){ seen = []; unseen = pool.slice(); toast("Toutes les cartes y sont passées : on remélange."); }
+  const item = unseen[Math.floor(Math.random() * unseen.length)];
+  seen.push(keyf(item)); S.seen[game] = seen;
+  S.cur = {game, key:keyf(item), picks:{}, revealed:false, awarded:{}};
+}
+function leader(){
+  const max = Math.max(...S.players.map(p => p.score));
+  if (max <= 0) return "Personne n’a encore marqué. Tout reste à jouer.";
+  const top = S.players.filter(p => p.score === max).map(p => p.name);
+  return top.length === 1 ? `En tête : <b>${ty(top[0])}</b> avec ${max} point${max>1?"s":""}.` : `Égalité en tête : <b>${ty(top.join(", "))}</b> avec ${max} points.`;
+}
+
+/* ============ RENDU : ACCUEIL ============ */
+function renderHome(){
+  const bornes = S.players.map((p, i) => { const [c, f] = capOf(i);
+    return `<div class="borne" style="--cap:${c};--capfg:${f}"><div class="b"><div class="cap">${esc(p.name)}</div><div class="num">${p.score}</div></div></div>`; }).join("");
+  const editor = S.editing ? `
+    <div class="editor">
+      ${S.players.map((p, i) => `<div class="ed-row" style="--cap:${capOf(i)[0]}"><i></i>
+        <input id="pn-${p.id}" data-pid="${p.id}" value="${esc(p.name)}" maxlength="16" autocomplete="off" aria-label="Prénom du passager ${i+1}">
+        <button class="ed-del" data-act="del" data-p="${p.id}" aria-label="Retirer ${esc(p.name)}" ${S.players.length<=1?"disabled":""}>✕</button></div>`).join("")}
+      <div class="ed-actions">
+        ${S.players.length < 8 ? `<button class="btn-s" data-act="add">Ajouter un passager</button>` : ""}
+        <button class="btn-s solid" data-act="edit">Terminé</button>
+      </div>
+    </div>` : "";
+  const reset = S.confirmReset
+    ? `<div class="ed-actions"><button class="btn-s warn" data-act="reset-yes">Oui, tout remettre à zéro</button><button class="btn-s" data-act="reset-no">Annuler</button></div>`
+    : `<button class="link" data-act="reset">Remettre les scores à zéro</button>`;
+  const games = GAMES.map(g => {
+    const n = DATA[g.id].length, seen = (S.seen[g.id] || []).length;
+    return `<button class="sign ${g.sign} game-sign" data-act="open" data-game="${g.id}"><span class="in">
+      <span class="picto">${ic(g.picto, 2.2)}</span>
+      ${g.mine ? `<span class="mine">Signé Claude</span>` : ""}
+      <span class="gname">${ty(g.name)}</span>
+      <span class="gpitch">${ty(g.pitch)}</span>
+      <span class="cnt">${seen ? `${seen} / ${n} cartes jouées` : `${n} cartes`}</span>
+    </span></button>`; }).join("");
+  document.getElementById("app").innerHTML = `
+  <main class="wrap">
+    <header class="sign hero"><div class="in">
+      <div class="hero-row"><h1><span>Aire de</span><b>jeux</b></h1><span class="dist">4 h</span></div>
+      <p class="hero-sub">${ty(GAMES.length + " jeux pour tenir la route entre potes, sur un seul téléphone. Un passager lit, tout le monde répond.")}</p>
+      <div class="services">${GAMES.map(g => `<span class="svc" title="${esc(g.name)}">${ic(g.picto, 2.2)}</span>`).join("")}</div>
+    </div></header>
+
+    <section class="sec" aria-labelledby="eq">
+      <div class="sec-head"><h2 id="eq">L’équipage</h2><button class="link" data-act="edit">${S.editing ? "Fermer" : "Modifier"}</button></div>
+      ${editor || `<div class="bornes">${bornes}</div><p class="leader">${leader()}</p>`}
+    </section>
+
+    <section class="sec" aria-labelledby="jx">
+      <div class="sec-head"><h2 id="jx">Les jeux</h2></div>
+      <div class="gantry">${games}</div>
+    </section>
+
+    <section class="howto">
+      <h3>Comment on joue</h3>
+      <ol>
+        <li>${ty("Un passager tient le téléphone et lit la carte à voix haute.")}</li>
+        <li>${ty("Chacun répond, et on note le choix de chacun d’un tap sur son prénom.")}</li>
+        <li>${ty("On révèle : les points tombent tout seuls, et mon avis lance le débat.")}</li>
+      </ol>
+    </section>
+
+    <div class="sec">
+      ${reset}
+      <p class="foot">${ty("Version 1 du vendredi 6 novembre. Prochain arrêt samedi : de nouveaux jeux et encore plus de cartes. Tout est chargé dans la page : une fois ouverte, elle tient même sans réseau.")}</p>
+    </div>
+  </main>`;
+}
+
+/* ============ RENDU : JEU ============ */
+function promptHTML(g, it, rev, ans){
+  const sg = g.sign;
+  if (g.id === "souvenir") return `<div class="sign ${sg}"><div class="in">
+      <p class="eyebrow">${ty("On s’en souviendra encore dans…")}</p>
+      <h2 class="big">${ty(it.n)}</h2><p class="sub">${ty(it.d)}</p></div></div>`;
+  if (g.id === "tp" || g.id === "google"){
+    const head = g.id === "tp" ? `<p class="eyebrow">Tu préfères…</p>`
+      : `<p class="eyebrow">${ty(`Google ${it.s ? "Monde" : "France"} · ${it.y} · ${it.c}`)}</p><p class="sub">${ty("Laquelle a le plus grimpé dans les recherches ?")}</p>`;
+    return `<div class="sign ${sg} ${rev ? "revealed" : ""}"><div class="in">${head}
+      <div class="opt ${rev && ans===0 ? "chosen" : ""}"><span class="tag">A</span><span>${ty(it.a)}</span></div>
+      <div class="or">ou</div>
+      <div class="opt ${rev && ans===1 ? "chosen" : ""}"><span class="tag">B</span><span>${ty(it.b)}</span></div></div></div>`;
+  }
+  if (g.id === "prix") return `<div class="sign ${sg}"><div class="in"><p class="eyebrow">Devine le prix</p><h2 class="q">${ty(it.q)}</h2></div></div>`;
+  if (g.id === "avap") return `<div class="sign ${sg}"><div class="in">
+      <p class="eyebrow">${ty("Le 1 s’est-il passé avant ou après le 2 ?")}</p>
+      <div class="opt"><span class="tag">1</span><span>${ty(it.a)}</span></div>
+      <div class="or">avant ou après</div>
+      <div class="opt"><span class="tag">2</span><span>${ty(it.b)}</span></div></div></div>`;
+  if (g.id === "cote") return `<div class="sign ${sg}"><div class="in"><p class="eyebrow">Quelle est ma cote ?</p><h2 class="q">${ty(it.q)}</h2></div></div>`;
+}
+
+function picksHTML(g, ans){
+  const c = S.cur, rev = c.revealed;
+  if (g.closest){
+    if (!rev) return `<p class="hint">${ty("Chacun annonce sa réponse à voix haute, puis on révèle.")}</p>`;
+    return `<section class="picks"><h3 class="picks-h">Qui était le plus proche ?</h3>
+      <p class="hint">${ty("Tape sur le ou les gagnants : 1 point chacun. Tape à nouveau pour annuler.")}</p>
+      <div class="winners">${S.players.map((p, i) => `<button class="chip" style="--cap:${capOf(i)[0]}" data-act="win" data-p="${p.id}" aria-pressed="${!!c.awarded[p.id]}"><i></i>${esc(p.name)}${c.awarded[p.id] ? " +1" : ""}</button>`).join("")}</div>
+    </section>`;
+  }
+  const wide = g.opts.length > 2;
+  return `<section class="picks"><h3 class="picks-h">${rev ? "Les réponses" : "Qui dit quoi ?"}</h3>
+    ${S.players.map((p, i) => { const pk = c.picks[p.id]; const aw = c.awarded[p.id];
+      return `<div class="pick ${wide ? "wide" : ""}" style="--cap:${capOf(i)[0]}">
+        <div class="pname"><i></i><span>${esc(p.name)}</span>${rev && aw ? `<b class="award">+${aw}</b>` : ""}<b class="sc">${p.score} pt${p.score>1?"s":""}</b></div>
+        <div class="chips" style="--n:${g.opts.length}">${g.opts.map((o, v) => {
+          let cls = "chip"; if (rev && v === ans) cls += " good"; else if (rev && g.id==="souvenir" && Math.abs(v-ans)===1) cls += " near";
+          return `<button class="${cls}" data-act="pick" data-p="${p.id}" data-v="${v}" aria-pressed="${pk===v}" ${rev ? "disabled" : ""}>${ty(o)}</button>`; }).join("")}</div>
+      </div>`; }).join("")}
+  </section>`;
+}
+
+function pointsLine(){
+  const a = S.cur.awarded, ids = Object.keys(a).filter(k => a[k] > 0 && pIndex(k) > -1);
+  if (!ids.length) return `<p class="pts-line none">Personne ne marque sur cette carte.</p>`;
+  return `<p class="pts-line">${ty(ids.map(k => `+${a[k]} ${S.players[pIndex(k)].name}`).join(", "))}</p>`;
+}
+
+function revealHTML(g, it, ans){
+  if (g.id === "souvenir"){
+    const pos = (ans + .5) / 5 * 100;
+    return `<section class="reveal" id="rev"><p class="eyebrow">Mon verdict</p>
+      <p class="verdict">${ty(HORIZ[ans])}</p>
+      <div class="road" aria-label="${esc(HYEAR[ans])}">
+        <div class="asphalt"><div class="fill" style="width:${pos}%"></div><div class="dash"></div><span class="car" style="left:${pos}%">${CAR}</span></div>
+        <div class="marks">${["< 100","100","300","500","1 000+"].map((m, i) => `<span class="${i===ans?"on":""}">${ty(m)}<small>${["avant 2126","2126","2326","2526","3026"][i]}</small></span>`).join("")}</div>
+      </div>
+      <p class="why">${ty(it.w)}</p>${pointsLine()}</section>`;
+  }
+  if (g.id === "tp"){
+    const t = S.players.reduce((acc, p) => { const v = S.cur.picks[p.id]; if (v===0) acc[0]++; if (v===1) acc[1]++; return acc; }, [0,0]);
+    const tally = t[0] + t[1] ? `Dans la voiture : ${t[0]} pour A, ${t[1]} pour B.` : "";
+    return `<section class="reveal" id="rev"><p class="eyebrow">Mon choix</p>
+      <p class="verdict">${ans===0 ? "A" : "B"}</p><p class="why">${ty(it.w)}</p>
+      ${tally ? `<p class="hint">${ty(tally)}</p>` : ""}${pointsLine()}</section>`;
+  }
+  if (g.id === "prix") return `<section class="reveal" id="rev"><p class="eyebrow">La réponse</p>
+      <p class="verdict">${ty(it.r)}</p><p class="why">${ty(it.x)}</p></section>`;
+  if (g.id === "google"){
+    const rows = [[it.a, it.ra, ans===0], [it.b, it.rb, ans===1]].sort((x, y) => x[1] - y[1]);
+    return `<section class="reveal" id="rev"><p class="eyebrow">${ty(`Classement Google ${it.s ? "Monde" : "France"} ${it.y} · ${it.c}`)}</p>
+      <div class="ranks">${rows.map(r => `<div class="rank ${r[2] ? "win" : ""}"><em>${r[1]}<sup>${r[1]===1?"er":"e"}</sup></em><b>${ty(r[0])}</b></div>`).join("")}</div>
+      ${it.x ? `<p class="why">${ty(it.x)}</p>` : ""}
+      <p class="hint">${ty("Google classe les recherches qui ont le plus progressé sur l’année, pas forcément les plus nombreuses.")}</p>${pointsLine()}</section>`;
+  }
+  if (g.id === "avap"){
+    const rows = [[it.a, it.la, it.ya, true], [it.b, it.lb, it.yb, false]].sort((x, y) => x[2] - y[2]);
+    return `<section class="reveal" id="rev"><p class="eyebrow">La réponse</p>
+      <p class="verdict">${ans===0 ? "Avant" : "Après"}</p>
+      <div class="tl">${rows.map(r => `<div class="${r[3] ? "a" : ""}"><b>${ty(r[0])}</b><span>${ty(r[1])}</span></div>`).join("")}</div>
+      <p class="why">${ty(it.w)}</p>${pointsLine()}</section>`;
+  }
+  if (g.id === "cote") return `<section class="reveal" id="rev"><p class="eyebrow">Ma cote</p>
+      <p class="verdict">${it.p} %</p>
+      <div><div class="gauge"><span style="width:${it.p}%"></span></div><div class="gauge-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div></div>
+      <p class="why">${ty(it.w)}</p></section>`;
+}
+
+function renderGame(){
+  const g = GM[S.cur.game], it = currentItem();
+  if (!it){ draw(g.id); return renderGame(); }
+  const rev = S.cur.revealed, ans = answer(g.id, it);
+  const n = DATA[g.id].length, seen = (S.seen[g.id] || []).length;
+  document.getElementById("app").innerHTML = `
+  <div class="topbar"><div class="topbar-in">
+    <button class="back" data-act="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Aire</button>
+    <span class="tb-title">${ty(g.name)}</span>
+    <span class="tb-count">${seen}/${n}</span>
+  </div></div>
+  <main class="wrap">
+    <details class="rule" ${S.ruleOpen && S.ruleOpen[g.id] ? "open" : ""} data-rule="${g.id}"><summary>Règle du jeu</summary><p>${ty(g.rule)}</p></details>
+    ${promptHTML(g, it, rev, ans)}
+    ${picksHTML(g, ans)}
+    ${rev ? revealHTML(g, it, ans) : `<button class="btn primary" data-act="reveal">Révéler</button>`}
+    <div class="nav">${rev ? `<button class="btn primary" data-act="next">Carte suivante</button>` : `<button class="btn ghost" data-act="next">Passer cette carte</button>`}</div>
+  </main>`;
+}
+
+function render(){
+  if (S.view === "game" && S.cur) renderGame(); else { S.view = "home"; renderHome(); }
+  save();
+}
+
+/* ============ ACTIONS ============ */
+const app = document.getElementById("app");
+app.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  keepAwake();
+  const act = b.dataset.act, pid = b.dataset.p;
+  switch (act){
+    case "open": {
+      const gid = b.dataset.game;
+      if (!S.cur || S.cur.game !== gid) draw(gid);
+      S.view = "game"; render(); window.scrollTo(0, 0); return;
+    }
+    case "home": S.view = "home"; render(); window.scrollTo(0, 0); return;
+    case "edit": S.editing = !S.editing; S.confirmReset = false; render(); return;
+    case "add": {
+      const id = "p" + Date.now().toString(36);
+      S.players.push({id, name:"Pote " + (S.players.length + 1), score:0}); render();
+      const inp = document.getElementById("pn-" + id); if (inp){ inp.focus(); inp.select(); } return;
+    }
+    case "del": if (S.players.length > 1){ S.players = S.players.filter(p => p.id !== pid); render(); } return;
+    case "reset": S.confirmReset = true; render(); return;
+    case "reset-no": S.confirmReset = false; render(); return;
+    case "reset-yes": S.players.forEach(p => p.score = 0); S.confirmReset = false; render(); toast("Scores remis à zéro."); return;
+    case "pick": {
+      if (S.cur.revealed) return;
+      const v = +b.dataset.v; S.cur.picks[pid] = S.cur.picks[pid] === v ? undefined : v;
+      if (S.cur.picks[pid] === undefined) delete S.cur.picks[pid];
+      render(); return;
+    }
+    case "reveal": {
+      const g = GM[S.cur.game], it = currentItem(), ans = answer(g.id, it);
+      if (!g.closest){
+        S.players.forEach(p => { const pts = pointsFor(g.id, S.cur.picks[p.id], ans); if (pts){ S.cur.awarded[p.id] = pts; p.score += pts; } });
+      }
+      S.cur.revealed = true; render();
+      const r = document.getElementById("rev"); if (r) r.scrollIntoView({behavior: reduceMotion() ? "auto" : "smooth", block:"start"});
+      return;
+    }
+    case "win": {
+      const p = S.players[pIndex(pid)]; if (!p) return;
+      if (S.cur.awarded[pid]){ p.score -= 1; delete S.cur.awarded[pid]; } else { p.score += 1; S.cur.awarded[pid] = 1; }
+      render(); return;
+    }
+    case "next": draw(S.cur.game); render(); window.scrollTo(0, 0); return;
+  }
+});
+app.addEventListener("input", e => {
+  const pid = e.target.dataset && e.target.dataset.pid; if (!pid) return;
+  const p = S.players[pIndex(pid)]; if (p){ p.name = e.target.value.trim() || "Passager"; save(); }
+});
+app.addEventListener("toggle", e => {
+  const d = e.target; if (!d.dataset || !d.dataset.rule) return;
+  S.ruleOpen = S.ruleOpen || {}; S.ruleOpen[d.dataset.rule] = d.open; save();
+}, true);
+
+render();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
