@@ -299,6 +299,9 @@ p{margin:0}
 .lookup output span{font-weight:400; color:var(--muted)}
 .route{display:inline-flex; align-self:flex-start; font:800 11px/1 var(--f-body); letter-spacing:.08em; text-transform:uppercase; background:var(--yellow); color:var(--on-yellow); padding:6px 8px 5px; border-radius:5px}
 .win-group{display:flex; flex-direction:column; gap:8px}
+.rank.vol{grid-template-columns:minmax(0,1fr) auto}
+.rank.vol em{min-width:0; padding:0 9px; white-space:nowrap}
+.kind{display:inline-flex; align-self:flex-start; font:800 11px/1 var(--f-body); letter-spacing:.08em; text-transform:uppercase; background:var(--sign-ink); color:var(--sign-paper); padding:6px 8px 5px; border-radius:5px}
 .src{font-size:13px; color:var(--muted)}
 .src a{color:inherit}
 
@@ -671,146 +674,82 @@ const COTE = [
  {q:"L’humanité installe une base habitée en permanence sur la Lune avant 2045", p:30, w:"La NASA et la Chine visent toutes les deux une présence durable. Mais « permanente », c’est une autre affaire qu’un aller-retour."}
 ];
 
-/* Le Grand Débat : x = camp A, y = camp B, ax / ay = arguments de secours, m = mon avis, p = pimenté */
-const DEBAT = [
- {q:"Chocolatine ou pain au chocolat ?", x:"Chocolatine", y:"Pain au chocolat",
-  ax:["Vous partez de Toulouse : dans le Sud-Ouest, on dit chocolatine, point final.","Ce n’est pas du pain, c’est une viennoiserie. « Pain au chocolat » est donc faux.","Au Québec aussi, on dit chocolatine. Le Sud-Ouest n’est pas seul au monde."],
-  ay:["C’est le mot utilisé dans la plus grande partie de la France.","On dit pain aux raisins, pas raisinine. La logique est de notre côté.","Le mot dit exactement ce qu’il y a dedans. Pas besoin de traduction."],
-  m:"Chocolatine, sans hésiter. Ce n’est pas du pain, et le mot a un vrai ancrage régional. Mais j’admets que le camp d’en face a la majorité de la France avec lui, et en démocratie, ça compte."},
- {q:"Le rugby est-il un plus beau sport que le football ?", x:"Oui, le rugby", y:"Non, le football",
-  ax:["Au rugby, on ne conteste pas l’arbitre, on l’appelle « monsieur ».","On se plaque pendant 80 minutes, puis on boit un verre ensemble : c’est la troisième mi-temps.","Il y a de la place pour tous les gabarits, du petit demi de mêlée au pilier de 130 kilos."],
-  ay:["C’est le sport le plus populaire du monde : un ballon et deux sacs suffisent pour jouer.","Un match de foot se comprend en dix secondes. Les règles du rugby, même les joueurs les débattent.","Un seul but peut tout changer jusqu’à la dernière seconde."],
-  m:"Pour une voiture qui part de Toulouse, la réponse est évidente : le rugby. Plus sérieusement, le rugby gagne sur le respect de l’arbitre et l’esprit, le foot sur la simplicité et l’universalité. Pour le spectacle pur, je penche pour le rugby."},
- {q:"Toulouse ou Clermont-Ferrand : quelle ville est la plus agréable à vivre ?", x:"Toulouse", y:"Clermont-Ferrand",
-  ax:["Plus de 2 000 heures de soleil par an, et la brique rose qui brille au coucher du soleil.","Airbus, le spatial, une énorme ville étudiante : c’est là qu’il y a du travail.","Le Stade Toulousain, le club le plus titré de France."],
-  ay:["Les volcans sont à 20 minutes du centre-ville, et la chaîne des Puys est classée à l’Unesco.","Les loyers et l’immobilier y coûtent nettement moins cher qu’à Toulouse.","Moins de bouchons, et les pistes de ski à environ une heure de route."],
-  m:"Pour l’emploi et le soleil, Toulouse gagne. Pour le prix de l’immobilier et la nature, Clermont gagne largement. Avec un salaire moyen, je choisirais Clermont : on y vit mieux pour le même budget. Mais je ne le dirais pas trop fort en sortant de Toulouse."},
- {q:"Louer ou acheter sa résidence principale ?", x:"Louer", y:"Acheter",
-  ax:["Les frais de notaire dans l’ancien, environ 7 à 8 % du prix, sont perdus le jour de l’achat.","Locataire, on peut déménager pour un meilleur travail sans être bloqué par un bien à vendre.","L’apport placé ailleurs peut rapporter, pendant que le propriétaire paie des intérêts et la taxe foncière."],
-  ay:["Un loyer part pour toujours. Une mensualité de crédit, c’est en grande partie de l’épargne.","Le crédit permet d’acheter avec l’argent de la banque : peu de placements se financent aussi facilement.","À la retraite, le propriétaire n’a plus de loyer à payer."],
-  m:"Tout dépend de la durée. En dessous de 5 à 7 ans, louer gagne souvent à cause des frais d’achat et de revente. Au-delà, acheter l’emporte en général, surtout avec un crédit à taux fixe. Pour le reste, il y a un conseiller en gestion de patrimoine dans la voiture."},
- {q:"Ton meilleur ami se fait tromper. Faut-il le lui dire ?", x:"Oui, il faut le lui dire", y:"Non, ce n’est pas ton rôle", p:1,
-  ax:["Un vrai ami dit la vérité, même quand elle fait mal.","S’il apprend un jour que tu savais, c’est votre amitié qui est finie.","Plus il l’apprend tard, plus il perd de temps dans une relation fausse."],
-  ay:["Vu de l’extérieur, on ne connaît jamais toute l’histoire d’un couple.","Le messager se fait souvent détester, et le couple se réconcilie contre lui.","Le mieux est de pousser l’autre personne à avouer elle-même."],
-  m:"Je le dirais, mais seulement avec une certitude, pas sur une rumeur. En tête à tête, sans détails inutiles. Le silence protège surtout celui qui sait, pas celui qui est trompé."},
- {q:"Peut-on rester ami avec son ex ?", x:"Oui", y:"Non", p:1,
-  ax:["Si on s’est aimés, c’est qu’on s’entendait bien. Pourquoi tout jeter ?","Avec le temps, les sentiments passent et l’amitié reste.","Quand on a des amis en commun, c’est plus simple pour tout le monde."],
-  ay:["L’un des deux espère toujours un peu plus que de l’amitié.","Le ou la suivante ne sera jamais à l’aise.","Pour tourner la page, il faut fermer le livre."],
-  m:"Possible, mais rarement tout de suite. Il faut une vraie coupure de quelques mois, et que les deux soient passés à autre chose. Sans ça, ce n’est pas de l’amitié, c’est une salle d’attente."},
- {q:"Au restaurant entre amis, faut-il partager l’addition à parts égales ?", x:"Oui, parts égales", y:"Non, chacun paie sa part",
-  ax:["On est entre amis, pas chez le comptable.","Ça va plus vite : personne ne passe dix minutes sur la calculatrice.","La prochaine fois, c’est toi qui prendras le plat le plus cher. Ça s’équilibre."],
-  ay:["Celui qui a pris une salade n’a pas à payer le homard du voisin.","Ceux qui ont moins de moyens peuvent venir sans stress.","Avec les applis de paiement, faire les comptes prend trente secondes."],
-  m:"Parts égales, sauf grosse différence. Si quelqu’un a pris une salade et de l’eau pendant que les autres commandaient du vin, on le laisse payer sa part. L’amitié vaut plus que 6 euros, mais pas forcément plus que 40."},
- {q:"En voiture, qui choisit la musique ?", x:"Le conducteur", y:"Le passager avant",
-  ax:["C’est lui qui travaille : il a droit à son ambiance.","Une musique qu’il n’aime pas le fatigue, et un conducteur fatigué, c’est dangereux.","Sa voiture, ses règles."],
-  ay:["Le conducteur doit regarder la route, pas son téléphone.","Le passager avant est le copilote : la musique fait partie du poste.","Le conducteur a déjà le volant. On ne peut pas tout avoir."],
-  m:"Le passager avant choisit, mais le conducteur garde un droit de veto. C’est la règle la plus sûre : personne ne touche à son téléphone au volant, et personne ne subit quatre heures de musique qu’il déteste."},
- {q:"Les vacances : mer ou montagne ?", x:"La mer", y:"La montagne",
-  ax:["Ne rien faire sur une plage, c’est le seul vrai repos.","Les fruits de mer, les couchers de soleil sur l’eau, les apéros les pieds dans le sable.","À la montagne aussi on se baigne, mais dans un lac à 14 degrés."],
-  ay:["La montagne se vit toute l’année : ski l’hiver, randonnée l’été.","Moins de monde, plus d’air frais, pas de serviettes collées les unes aux autres.","Pas de sable dans la voiture au retour."],
-  m:"La montagne. Elle offre deux saisons au lieu d’une et beaucoup moins de foule. Et vous allez en Auvergne : montrez-lui un peu de respect."},
- {q:"Faut-il dépenser tout son argent de son vivant plutôt que de le laisser en héritage ?", x:"Oui, tout dépenser", y:"Non, transmettre",
-  ax:["En France, on hérite en moyenne vers 50 ans, quand on en a le moins besoin.","On travaille toute sa vie pour en profiter, pas pour les droits de succession.","Mieux vaut donner de son vivant et voir le plaisir que ça fait."],
-  ay:["Transmettre, c’est donner à ses enfants un meilleur départ que le sien.","Personne ne connaît la date de sa mort. Tout dépenser, c’est risquer de finir sans rien.","Un patrimoine construit sur plusieurs générations, ça ne se rattrape pas."],
-  m:"Entre les deux : donner de son vivant. Chaque parent peut donner 100 000 euros à chaque enfant tous les 15 ans sans droits de donation. On profite de son argent, on voit ses enfants en profiter, et on paie moins d’impôts. Le conseiller de la voiture approuvera."},
- {q:"Les chiens sont-ils meilleurs que les chats ?", x:"Oui, les chiens", y:"Non, les chats",
-  ax:["Un chien est fou de joie de te revoir, même si tu es parti cinq minutes.","Un chien te fait sortir et bouger tous les jours.","On peut apprendre des dizaines de choses à un chien. Essaie avec un chat."],
-  ay:["Un chat se garde tout seul un week-end. Un chien, non.","Le chat t’aime, mais il te choisit. C’est plus flatteur.","Un chat ne réveille pas les voisins en aboyant à 6 heures."],
-  m:"Je suis une IA, je n’ai pas de canapé à protéger. Mais pour une vie active avec beaucoup de déplacements, le chat est plus simple. Pour la compagnie pure, le chien gagne."},
- {q:"Les films : en VF ou en VO ?", x:"En VF", y:"En VO",
-  ax:["On regarde le film au lieu de lire des sous-titres.","Les comédiens de doublage français sont parmi les meilleurs du monde.","Certaines répliques cultes n’existent vraiment qu’en VF."],
-  ay:["La voix de l’acteur fait partie de son jeu. La changer, c’est changer le film.","On progresse en anglais sans effort.","Les blagues et les jeux de mots se perdent souvent à la traduction."],
-  m:"La VO, quand les sous-titres ne gênent pas : la voix fait partie du jeu d’un acteur. Mais pour les dessins animés, la VF est souvent une vraie création, et elle se défend très bien."},
- {q:"L’argent fait-il le bonheur ?", x:"Oui", y:"Non",
-  ax:["Ceux qui disent non n’ont jamais eu de problèmes d’argent.","L’argent achète du temps, de la santé et de la liberté.","Des études récentes montrent que le bien-être continue d’augmenter avec les revenus."],
-  ay:["Plein de gens très riches sont malheureux, et plein de gens modestes sont heureux.","L’amour, l’amitié et la santé ne s’achètent pas.","Plus on gagne, plus on dépense, et plus on en veut."],
-  m:"Il en faut assez pour ne plus y penser. En dessous, il fait clairement le bonheur. Au-dessus, il en fait toujours un peu plus, mais de moins en moins. Après, ce sont les gens autour de toi qui font la différence."},
- {q:"Mieux vaut être patron d’une petite boîte ou cadre dans une grande ?", x:"Patron d’une petite boîte", y:"Cadre dans une grande",
-  ax:["On ne travaille pour personne d’autre que soi.","Ce qu’on construit nous appartient, et ça peut se revendre.","Pas de réunion pour préparer la réunion."],
-  ay:["Un salaire qui tombe tous les mois, même quand l’économie va mal.","Des congés vraiment déconnectés : quand on part, quelqu’un prend le relais.","Chômage, mutuelle, CSE : un filet de sécurité complet."],
-  m:"Patron, à condition d’aimer le risque. On travaille plus, on dort parfois moins, mais on construit un patrimoine qui nous appartient. Ceux qui ont essayé en parleront mieux que moi."},
- {q:"Le télétravail : progrès ou piège ?", x:"Un progrès", y:"Un piège",
-  ax:["Pas de trajet : des heures gagnées chaque semaine.","On travaille mieux au calme qu’en open space.","On peut vivre loin des grandes villes, là où le logement coûte moins cher."],
-  ay:["On ne sait plus quand la journée de travail s’arrête.","On apprend moins vite seul derrière un écran, surtout en début de carrière.","Les promotions vont souvent à ceux qu’on voit au bureau."],
-  m:"Un progrès, à petite dose. Deux ou trois jours par semaine, c’est presque le meilleur des deux mondes. À 100 %, c’est un piège, surtout pour les jeunes qui apprennent le métier."},
- {q:"Faut-il faire croire au Père Noël aux enfants ?", x:"Oui", y:"Non",
-  ax:["C’est la magie de l’enfance, et elle passe bien assez vite.","Presque tous les adultes en gardent un bon souvenir.","Les enfants découvrent la vérité seuls, au bon moment pour eux."],
-  ay:["On apprend aux enfants à ne pas mentir, puis on leur ment pendant des années.","La magie de Noël existe aussi sans personnage inventé.","Certains enfants le vivent mal quand ils l’apprennent."],
-  m:"Oui. C’est un jeu plus qu’un mensonge, et la plupart des enfants le comprennent seuls en grandissant. Le jour où l’enfant pose la question sérieusement, on lui répond sérieusement."},
- {q:"Les réseaux sociaux ont-ils rendu nos vies meilleures ?", x:"Oui", y:"Non",
-  ax:["On garde contact avec des gens qu’on aurait perdus de vue.","N’importe qui peut lancer son entreprise ou sa carrière depuis sa chambre.","On apprend à cuisiner, bricoler ou investir gratuitement."],
-  ay:["On passe des heures par jour à faire défiler des vidéos.","On compare sa vie à celle des autres, toujours en version retouchée.","Les fausses informations circulent plus vite que les vraies."],
-  m:"Pour garder contact et apprendre, oui. Pour notre attention et notre moral, non. Le problème n’est pas l’outil, c’est le fil infini conçu pour qu’on ne s’arrête jamais. Mon verdict : légèrement négatif."},
- {q:"Dans un couple, doit-on avoir accès au téléphone de l’autre ?", x:"Oui", y:"Non", p:1,
-  ax:["Si on n’a rien à cacher, pourquoi le cacher ?","La transparence évite les doutes et les disputes.","En cas d’urgence, c’est pratique de pouvoir l’ouvrir."],
-  ay:["Avoir confiance, c’est justement ne pas avoir besoin de vérifier.","Le téléphone contient aussi les secrets des amis, qui ne nous appartiennent pas.","Chacun a droit à son jardin secret, même en couple."],
-  m:"Non. Connaître le code en cas d’urgence, pourquoi pas. Mais fouiller ou exiger l’accès, c’est déjà le signe d’un problème de confiance, et le téléphone ne le réglera pas."},
- {q:"Cassoulet ou aligot : quel est le meilleur plat ?", x:"Le cassoulet", y:"L’aligot",
-  ax:["Haricots, confit, saucisse de Toulouse : un repas complet dans un seul plat.","Il est encore meilleur réchauffé le lendemain.","Castelnaudary, Carcassonne et Toulouse se le disputent depuis des siècles : c’est bien qu’il le vaut."],
-  ay:["Purée, tomme fraîche et ail : trois ingrédients et du génie.","Le spectacle du fromage qui file au bout de la cuillère.","C’est le plat de l’Aubrac, entre l’Aveyron, la Lozère et le Cantal : le trajet en est presque un pèlerinage."],
-  m:"Le cassoulet, pour la richesse. Mais l’aligot est le seul plat qui se mange en faisant de la musculation avec sa cuillère. Idéalement : un cassoulet ce soir, un aligot demain."},
- {q:"Pour voyager en France, mieux vaut la voiture ou le train ?", x:"La voiture", y:"Le train",
-  ax:["À quatre, le prix par personne bat presque toujours le train.","On part quand on veut, avec autant de bagages qu’on veut.","Les meilleurs moments se passent dans la voiture. La preuve : cette appli."],
-  ay:["On peut dormir, lire ou travailler pendant le trajet.","Pas de bouchons, pas de fatigue au volant.","Le train émet beaucoup moins de CO2 par voyageur que la voiture."],
-  m:"À quatre amis, la voiture gagne : le prix, la liberté, et cette appli. Seul, le train gagne largement."},
- {q:"Vaut-il mieux être très intelligent ou très beau ?", x:"Très intelligent", y:"Très beau",
-  ax:["La beauté passe avec l’âge, l’intelligence reste.","L’intelligence permet de gagner de l’argent, et l’argent permet… tout le reste.","On peut toujours s’arranger physiquement, beaucoup moins intellectuellement."],
-  ay:["Des études montrent que les gens beaux sont en moyenne mieux payés.","La beauté ouvre les portes dès le premier regard, sans effort.","Les gens très intelligents s’inquiètent de tout. Les gens beaux profitent."],
-  m:"Intelligent. La beauté donne un avantage au début d’une rencontre, l’intelligence pendant toute la vie. Et à 80 ans, c’est la seule des deux qui se voit encore."},
- {q:"Faut-il se marier, ou au moins se pacser, avant d’acheter un bien à deux ?", x:"Oui, d’abord se protéger", y:"Non, c’est trop tôt",
-  ax:["Entre concubins, ce qu’on lègue par testament est taxé à 60 %.","Sans mariage ni Pacs, le survivant n’hérite de rien sans testament.","Le Pacs se signe vite et se défait facilement."],
-  ay:["On ne s’engage pas pour la vie juste pour une question de notaire.","Un achat en indivision bien rédigé chez le notaire protège déjà chacun selon son apport.","L’amour ne se règle pas avec des papiers."],
-  m:"Oui, au moins un Pacs et un testament, et ce n’est pas une blague. Entre concubins, ce qui est transmis par testament est taxé à 60 %. Entre époux ou partenaires de Pacs, c’est exonéré. Attention : un partenaire de Pacs n’hérite que s’il y a un testament."},
- {q:"L’intelligence artificielle va-t-elle supprimer plus d’emplois qu’elle n’en crée ?", x:"Oui", y:"Non",
-  ax:["Elle sait déjà écrire, traduire, coder et dessiner. Que restera-t-il ?","Cette fois, la machine remplace le cerveau, pas seulement les bras.","Les nouveaux métiers créés demanderont beaucoup moins de monde."],
-  ay:["Chaque révolution technique a fait peur, et l’emploi a toujours fini par augmenter.","Le métier de développeur web n’existait pas il y a 30 ans.","L’IA aide surtout à faire son travail plus vite, pas à le faire disparaître."],
-  m:"Je suis mal placé pour être neutre. Honnêtement, personne ne le sait. Les révolutions passées ont fini par créer plus d’emplois, mais la transition a été dure pour ceux qui l’ont vécue. Ce qui est sûr : les métiers vont changer plus vite que les formations."},
- {q:"Faut-il interdire les téléphones à table ?", x:"Oui", y:"Non",
-  ax:["Un repas, c’est le seul moment où on se parle vraiment.","Regarder son écran pendant que quelqu’un parle, c’est lui dire qu’il compte moins.","Le premier qui regarde son téléphone paie l’addition : problème réglé."],
-  ay:["Vérifier une info en direct règle les débats en dix secondes.","Montrer une photo ou une vidéo, ça fait partie de la conversation.","On n’est plus au collège : chacun est assez grand pour se gérer."],
-  m:"Oui, sauf exception. Le téléphone posé écran contre la table, et on ne le sort que pour vérifier une info ou montrer une photo au groupe. Le jeu de la pile de téléphones, où le premier qui craque paie, marche très bien."},
- {q:"Les Français râlent-ils trop ?", x:"Oui", y:"Non",
-  ax:["On râle contre la météo, les impôts, les grèves, et même contre ceux qui râlent.","Les étrangers le disent tous : c’est notre sport national.","On a des vacances et une protection sociale enviées partout, et on se plaint quand même."],
-  ay:["Râler, c’est l’esprit critique. C’est ce qui fait avancer les choses.","La France reste le pays le plus visité du monde. Si c’était si terrible, ça se saurait.","Râler ensemble crée du lien. C’est presque une forme d’amitié."],
-  m:"Oui, mais c’est une qualité déguisée : râler, c’est refuser de se contenter. Le vrai problème commence quand on râle sans jamais rien changer."},
- {q:"Le pire passager : celui qui dort tout le trajet ou celui qui parle sans arrêt ?", x:"Celui qui dort", y:"Celui qui parle",
-  ax:["Il ne participe à rien : ni à la conversation, ni à la musique, ni à l’essence.","Il donne envie de dormir au conducteur, et ça, c’est dangereux.","Il se réveille à l’arrivée en disant que le trajet est passé vite."],
-  ay:["Le dormeur, au moins, ne dérange personne.","Quatre heures de monologue, ça fatigue plus que la route.","Le bavard empêche le conducteur de se concentrer."],
-  m:"Celui qui dort. Le bavard garde le conducteur éveillé, et c’est le vrai rôle d’un passager sur un long trajet. Si quelqu’un s’endort aujourd’hui, vous savez qui a perdu ce débat."}
+/* Le mensonge de Claude : m = "a" (trois trucs absurdes) ou "e" (trois évidences), t = deux vérités, f = le mensonge, w = l’explication */
+const MENS = [
+ {m:"a", t:["Les wombats font des crottes en forme de cube.","Les flamants roses mangent la tête à l’envers."], f:"Le lait des hippopotames est rose.", w:"Fausse info virale : leur lait est blanc. La confusion vient d’un liquide rougeâtre que sécrète leur peau, et qui leur sert de crème solaire. Les crottes cubiques des wombats, elles, sont bien réelles."},
+ {m:"a", t:["En France, on peut épouser une personne décédée.","Une commune française s’appelle simplement Y."], f:"En France, il est interdit d’appeler son cochon Napoléon.", w:"Aucune loi ne l’interdit : c’est une légende urbaine. Le mariage posthume existe bien, avec l’autorisation du président de la République. Et Y est un village de la Somme."},
+ {m:"a", t:["Au Japon, une île est peuplée de centaines de lapins en liberté.","La reine Elizabeth II n’avait pas de passeport."], f:"Le premier Oscar du meilleur acteur a été remis à un chien.", w:"Une légende dit que le chien Rin Tin Tin aurait reçu le plus de voix en 1929, mais rien ne le prouve : le prix est allé à l’acteur Emil Jannings. Elizabeth II, elle, n’avait pas besoin de passeport, puisque les passeports britanniques étaient délivrés en son nom."},
+ {m:"a", t:["Les bananes sont légèrement radioactives.","On a retrouvé dans des tombes égyptiennes du miel qui ne s’était pas gâté."], f:"En France, le chocolat a servi de monnaie officielle jusqu’à la Révolution.", w:"Ce sont les Aztèques qui payaient avec des fèves de cacao. Les bananes contiennent du potassium, dont une infime partie est radioactive, sans aucun danger."},
+ {m:"a", t:["Sur Vénus, une journée dure plus longtemps qu’une année.","Selon les scientifiques, il pleut probablement des diamants sur Neptune."], f:"Sur Mars, les couchers de soleil sont verts.", w:"Ils sont bleus ! Le ciel martien est ocre en journée, et la fine poussière rend le coucher de soleil bleuté. Les pluies de diamants sur Neptune et Uranus sont une hypothèse sérieuse, reproduite en laboratoire."},
+ {m:"a", t:["Les pieuvres ont trois cœurs et le sang bleu.","Les loutres de mer ont une poche sous le bras pour ranger leur caillou préféré."], f:"Les autruches courent plus vite à reculons qu’en marche avant.", w:"Inventé de toutes pièces. Les autruches courent jusqu’à environ 70 km/h, mais en marche avant. Les loutres, elles, gardent bien un caillou dans un repli de peau pour casser les coquillages."},
+ {m:"a", t:["Napoléon a été attaqué par des centaines de lapins pendant une partie de chasse.","Au Moyen Âge, on faisait des procès à des cochons."], f:"La guerre de Cent Ans a été interrompue un an pour un tournoi de pétanque.", w:"La pétanque n’a été inventée qu’en 1907, à La Ciotat. Les lapins de Napoléon et les procès d’animaux sont, eux, des faits historiques."},
+ {m:"a", t:["Jules César, enlevé par des pirates, a exigé qu’ils augmentent sa rançon.","Cléopâtre a vécu plus près de l’invention de l’iPhone que de la construction de la grande pyramide."], f:"L’empereur Néron a nommé son cheval consul.", w:"Piège : l’anecdote concerne Caligula, pas Néron. Et selon l’historien Suétone, il aurait seulement envisagé de nommer son cheval Incitatus consul."},
+ {m:"a", t:["On ne peut pas se chatouiller soi-même.","Le corps humain émet de la lumière, trop faible pour être vue à l’œil nu."], f:"Le cœur s’arrête une fraction de seconde à chaque éternuement.", w:"C’est un mythe : la pression dans la poitrine peut modifier un instant le rythme, mais le cœur ne s’arrête pas. La lumière émise par le corps, elle, a été mesurée par des chercheurs japonais en 2009."},
+ {m:"a", t:["Nintendo a possédé une compagnie de taxis.","Le premier objet vendu sur eBay était un pointeur laser cassé."], f:"Le premier objet vendu sur Amazon était un grille-pain.", w:"C’était un livre de sciences cognitives : Amazon a commencé comme librairie en ligne. Le pointeur laser cassé d’eBay, lui, s’est vendu 14,83 dollars à un collectionneur."},
+ {m:"a", t:["Le ketchup a été vendu comme médicament aux États-Unis au XIXe siècle.","Le Coca-Cola contenait de la cocaïne à ses débuts."], f:"Le Nutella a été vendu en pharmacie comme remède contre la fatigue.", w:"Jamais. Le Nutella est né en 1964 chez Ferrero, en Italie, comme simple pâte à tartiner. Le ketchup, lui, a bien été vendu en pilules dans les années 1830."},
+ {m:"a", t:["Dans l’espace, les astronautes grandissent de quelques centimètres.","Une voiture tourne en orbite autour du Soleil."], f:"La Lune s’éloigne de la Terre d’environ 4 mètres par an.", w:"Elle s’éloigne bien, mais d’environ 3,8 centimètres par an, à peu près la vitesse à laquelle poussent les ongles. La voiture, c’est la Tesla Roadster envoyée par SpaceX en 2018."},
+ {m:"a", t:["Le mot « chiffre » vient d’un mot arabe qui voulait dire zéro.","« Anticonstitutionnellement » n’est pas le mot le plus long de la langue française."], f:"« Abracadabra » vient du nom d’un magicien égyptien, Abra Kadabra.", w:"Son origine reste incertaine. On le trouve dès l’Antiquité romaine, dans un texte médical où il servait de formule contre la fièvre. Et « intergouvernementalisations » bat bien « anticonstitutionnellement »."},
+ {m:"a", t:["Aux Jeux de Paris en 1900, il y a eu une épreuve de tir sur pigeons vivants.","Des médailles olympiques ont été données pour de la peinture et de la poésie."], f:"Aux Jeux de Paris en 1924, il y a eu une épreuve de lancer de baguette.", w:"Pure invention. Le tir sur pigeons vivants n’a eu lieu qu’une fois, en 1900. Les concours d’art, eux, ont fait partie des Jeux de 1912 à 1948."},
+ {m:"a", t:["Il y a plus de poules que d’humains sur Terre.","Un éclair est plus chaud que la surface du Soleil."], f:"Un chat a été maire d’une commune française pendant vingt ans.", w:"Pas en France : c’est à Talkeetna, en Alaska, qu’un chat nommé Stubbs a été maire honoraire pendant une vingtaine d’années. Et on compte plusieurs dizaines de milliards de poulets sur Terre, pour 8 milliards d’humains."},
+ {m:"e", t:["Le mont Blanc est le plus haut sommet des Alpes.","La Loire est le plus long fleuve de France."], f:"La Seine est le fleuve français qui a le plus gros débit.", w:"C’est le Rhône, de loin : environ trois fois le débit de la Seine à son embouchure."},
+ {m:"e", t:["La tour Eiffel a été construite pour l’Exposition universelle de 1889.","La Joconde est exposée au Louvre."], f:"La statue de la Liberté a été inaugurée en 1876, pour le centenaire de l’indépendance américaine.", w:"C’était bien le projet, mais le chantier a pris du retard : elle a été inaugurée en 1886, dix ans plus tard."},
+ {m:"e", t:["Le cœur humain a quatre cavités.","Le sang est rouge grâce au fer qu’il contient."], f:"Le sang est bleu dans les veines et devient rouge au contact de l’air.", w:"Le sang est toujours rouge, simplement plus foncé dans les veines. Les veines paraissent bleues à cause de la façon dont la peau filtre la lumière."},
+ {m:"e", t:["Le Soleil est une étoile.","La Terre met environ 365 jours à faire le tour du Soleil."], f:"Il fait plus chaud en été parce que la Terre est plus proche du Soleil.", w:"C’est l’inclinaison de la Terre qui crée les saisons. La Terre est même au plus près du Soleil début janvier, en plein hiver chez nous."},
+ {m:"e", t:["Le français est une langue officielle du Canada.","La Belgique a trois langues officielles."], f:"La Suisse a trois langues nationales : l’allemand, le français et l’italien.", w:"Il y en a quatre : il faut ajouter le romanche, parlé dans le canton des Grisons."},
+ {m:"e", t:["La Corse est une île de la Méditerranée.","Toulouse est surnommée la Ville rose."], f:"Toulouse est la troisième ville de France par la population.", w:"Elle est quatrième, derrière Paris, Marseille et Lyon. Mais c’est l’une des grandes villes françaises qui grandissent le plus vite."},
+ {m:"e", t:["La baleine bleue est le plus gros animal vivant.","Le guépard est l’animal terrestre le plus rapide."], f:"L’araignée est un insecte.", w:"C’est un arachnide : huit pattes, pas d’antennes, et un corps en deux parties au lieu de trois."},
+ {m:"e", t:["Le roquefort est fabriqué avec du lait de brebis.","Le champagne vient du nord-est de la France."], f:"Le kiwi est originaire de Nouvelle-Zélande.", w:"Il vient de Chine. La Nouvelle-Zélande l’a cultivé au XXe siècle et l’a rebaptisé du nom de son oiseau national."},
+ {m:"e", t:["L’eau bout à 100 °C au niveau de la mer.","Le diamant est fait de carbone."], f:"Les vitraux anciens sont plus épais en bas parce que le verre coule très lentement.", w:"Le verre ne coule pas à température ambiante. Les vitraux sont irréguliers parce que les verriers d’autrefois ne savaient pas faire des vitres d’épaisseur égale, et ils posaient souvent le côté épais en bas."},
+ {m:"e", t:["La Révolution française a commencé en 1789.","Christophe Colomb a atteint l’Amérique en 1492."], f:"Marie-Antoinette a dit : « Qu’ils mangent de la brioche ! »", w:"Rien ne prouve qu’elle l’ait dit. Rousseau attribue la phrase à « une grande princesse » dans un texte écrit quand Marie-Antoinette était encore une enfant en Autriche."},
+ {m:"e", t:["Un match de rugby à XV dure 80 minutes.","Le Tour de France se termine traditionnellement à Paris."], f:"Les cartons jaunes et rouges existent depuis les débuts du football.", w:"Ils ne sont apparus qu’à la Coupe du monde 1970. L’idée est venue d’un arbitre anglais, inspiré par un feu de circulation."},
+ {m:"e", t:["La France compte 101 départements.","Le président de la République est élu pour cinq ans."], f:"La France métropolitaine compte 18 régions.", w:"Il y a 18 régions en tout, mais seulement 13 en métropole. Les 5 autres sont en outre-mer."},
+ {m:"e", t:["La peau est le plus grand organe du corps humain.","Un adulte a 32 dents, dents de sagesse comprises."], f:"Les ongles des pieds poussent plus vite que ceux des mains.", w:"C’est l’inverse : les ongles des mains poussent environ deux à trois fois plus vite que ceux des pieds."},
+ {m:"e", t:["En France, on roule à droite.","Sur autoroute, la vitesse est limitée à 130 km/h par temps sec."], f:"Sous la pluie, la vitesse sur autoroute est limitée à 100 km/h.", w:"C’est 110 km/h sous la pluie sur autoroute. Le 100 km/h, c’est sur les voies rapides à chaussées séparées quand il pleut. À vérifier tout à l’heure sur les panneaux."},
+ {m:"e", t:["L’Australie est à la fois un pays et un continent.","Le Nil et l’Amazone sont les deux plus longs fleuves du monde."], f:"La capitale de la Turquie est Istanbul.", w:"C’est Ankara, depuis 1923. Istanbul reste la plus grande ville du pays."}
 ];
 
-/* Le mensonge de Claude : t = deux vérités, f = le mensonge, w = l’explication */
-const MENS = [
- {t:["Les pieuvres ont trois cœurs.","Les flamants roses sont roses à cause de ce qu’ils mangent."], f:"Les autruches enfoncent la tête dans le sable quand elles ont peur.", w:"C’est une légende. Les autruches se couchent au sol pour se cacher, ou retournent leurs œufs avec le bec, ce qui peut donner cette impression de loin."},
- {t:["La tour Eiffel est plus haute en été qu’en hiver.","Il y a plus d’arbres sur Terre que d’étoiles dans la Voie lactée."], f:"La Grande Muraille de Chine est visible à l’œil nu depuis la Lune.", w:"Elle est très longue mais bien trop étroite. Depuis la Lune, on ne distingue aucune construction humaine. La tour Eiffel, elle, gagne jusqu’à une quinzaine de centimètres en été, parce que le métal se dilate avec la chaleur."},
- {t:["Les Vikings ne portaient pas de casques à cornes.","Le mot « robot » vient du tchèque et désignait une corvée."], f:"Napoléon était particulièrement petit pour son époque.", w:"Il mesurait environ 1,69 m, dans la moyenne de son temps. La légende vient des caricatures anglaises et d’une confusion entre pouces français et anglais. Les casques à cornes des Vikings, eux, sont une invention des costumiers d’opéra du XIXe siècle."},
- {t:["Sur Vénus, une journée dure plus longtemps qu’une année.","Le Soleil représente plus de 99 % de la masse du système solaire."], f:"Mars a trois lunes.", w:"Mars n’en a que deux, Phobos et Deimos. Et oui, Vénus tourne si lentement sur elle-même qu’elle fait le tour du Soleil avant d’avoir fini un tour sur elle-même."},
- {t:["Le Nutella a été inventé en Italie.","Les carottes étaient surtout violettes ou jaunes avant de devenir orange."], f:"Le Coca-Cola était vert à l’origine.", w:"Il a toujours été brun, grâce au caramel. La légende vient sans doute des anciennes bouteilles en verre, qui avaient une teinte verte."},
- {t:["Le squelette d’un adulte compte 206 os.","Les bébés naissent avec plus d’os que les adultes."], f:"On n’utilise que 10 % de son cerveau.", w:"L’imagerie médicale montre que toutes les zones du cerveau servent, simplement pas toutes en même temps. Les bébés, eux, ont près de 300 os, dont beaucoup fusionnent en grandissant."},
- {t:["Après 1066, le français a été la langue de la cour d’Angleterre pendant environ trois siècles.","La devise de la monarchie britannique est en français : « Dieu et mon droit »."], f:"Le mot « week-end » vient du français.", w:"C’est un mot anglais, adopté en France au début du XXe siècle. Ironie de l’histoire : l’anglais, lui, a emprunté des milliers de mots au français après 1066."},
- {t:["Le Stade Toulousain est le club le plus titré du championnat de France de rugby.","Le canal du Midi relie Toulouse à la Méditerranée."], f:"Airbus a son siège social à Paris.", w:"Le siège opérationnel d’Airbus est à Blagnac, à côté de Toulouse, et le siège légal du groupe est aux Pays-Bas. Paris n’a rien à voir là-dedans."},
- {t:["La chaîne des Puys est inscrite au patrimoine mondial de l’Unesco.","Michelin a été fondé à Clermont-Ferrand."], f:"Clermont-Ferrand est la ville la plus haute de France.", w:"La plus haute ville de France est Briançon, à plus de 1 300 mètres. Clermont est autour de 400 mètres : ce sont les volcans qui la dominent, pas la ville."},
- {t:["L’ancêtre du croissant, le kipferl, vient d’Autriche.","Le roquefort a été le premier fromage protégé par une appellation d’origine en France."], f:"Le champagne a été inventé par le moine Dom Pérignon.", w:"C’est une légende entretenue par le marketing. Des Anglais décrivaient déjà comment rendre le vin pétillant en 1662, et Dom Pérignon cherchait plutôt à éviter les bulles. Le roquefort, lui, est protégé par une loi de 1925."},
- {t:["Un éclair est plus chaud que la surface du Soleil.","Le son va plus vite dans l’eau que dans l’air."], f:"La foudre ne tombe jamais deux fois au même endroit.", w:"Elle adore retomber au même endroit : l’Empire State Building est frappé une vingtaine de fois par an. Et un éclair atteint environ 30 000 °C, cinq fois plus que la surface du Soleil."},
- {t:["Le Monopoly descend d’un jeu créé pour dénoncer les excès des propriétaires.","Le Rubik’s Cube a été inventé par un professeur d’architecture hongrois."], f:"Les échecs ont été inventés en France au Moyen Âge.", w:"Les échecs viennent d’Inde, vers le VIe siècle, et sont passés par la Perse avant d’arriver en Europe. Le Monopoly, lui, descend de The Landlord’s Game, créé en 1904 par Lizzie Magie pour montrer les dangers de l’accaparement des terres."},
- {t:["Les tomates ont longtemps été considérées comme toxiques en Europe.","Botaniquement, la banane est une baie, mais pas la fraise."], f:"Le chocolat blanc contient plus de cacao que le chocolat noir.", w:"Le chocolat blanc ne contient aucune poudre de cacao, seulement du beurre de cacao, du sucre et du lait. Le chocolat noir en contient souvent plus de 50 %."},
- {t:["Le mot « OK » viendrait d’une blague de journalistes américains en 1839.","En français, le signe # s’appelle un croisillon."], f:"Le symbole @ a été inventé pour les e-mails en 1971.", w:"L’arobase existait depuis des siècles dans le commerce pour indiquer des quantités ou des prix. En 1971, l’ingénieur Ray Tomlinson l’a simplement choisie pour séparer le nom et l’adresse."},
- {t:["Le marathon mesure 42,195 km à cause de la famille royale britannique.","Un astronaute a joué au golf sur la Lune."], f:"Le rugby est né en France avant d’être exporté en Angleterre.", w:"Le rugby tient son nom de l’école de la ville anglaise de Rugby, au XIXe siècle. Le marathon, lui, a été rallongé aux Jeux de Londres en 1908 pour partir du château de Windsor et finir devant la loge royale."},
- {t:["Les billets en euros ne représentent aucun monument réel.","Une pièce de 1 centime coûte plus cher à fabriquer qu’elle ne vaut."], f:"Le livret A a été créé en 1945 pour financer la reconstruction.", w:"Il date de 1818, juste après les guerres napoléoniennes : il a plus de 200 ans. Les billets en euros, eux, montrent des styles d’architecture imaginaires, pour ne favoriser aucun pays."},
- {t:["Les koalas peuvent dormir jusqu’à 20 heures par jour.","Les dauphins peuvent dormir avec un œil ouvert."], f:"Les poissons rouges n’ont que 3 secondes de mémoire.", w:"Des expériences montrent qu’ils se souviennent de choses pendant des mois et peuvent apprendre des tours. Les dauphins, eux, endorment une moitié de leur cerveau à la fois."},
- {t:["En 1914, des taxis parisiens ont transporté des soldats vers le front de la Marne.","La guerre de Cent Ans a duré 116 ans."], f:"Les gladiateurs saluaient l’empereur par « Ave Caesar, morituri te salutant » avant chaque combat.", w:"La phrase n’est attestée qu’une seule fois, lors d’une bataille navale organisée sous l’empereur Claude, par des condamnés et non des gladiateurs ordinaires. C’est le cinéma qui en a fait une habitude."},
- {t:["La France est le pays qui compte le plus de fuseaux horaires au monde.","Le Brésil a une frontière avec la France."], f:"Le Sahara est le plus grand désert du monde.", w:"Le plus grand désert est l’Antarctique : un désert se définit par le manque de pluie, pas par la chaleur. Le Sahara est seulement le plus grand désert chaud. La France, avec l’outre-mer, compte 12 fuseaux horaires."},
- {t:["L’Australie est plus large que la Lune.","Il fait plus chaud sur Vénus que sur Mercure, pourtant plus proche du Soleil."], f:"Dans l’espace, on entend les explosions.", w:"Le son a besoin d’air ou de matière pour se propager. Dans le vide, une explosion est totalement silencieuse, n’en déplaise à Star Wars. L’Australie mesure environ 4 000 km d’est en ouest, la Lune 3 474 km de diamètre."},
- {t:["Le premier iPhone n’avait pas d’App Store.","Le premier SMS de l’histoire disait « Merry Christmas »."], f:"Le premier ordinateur portable d’Apple s’appelait le MacBook.", w:"C’était le Macintosh Portable, en 1989, qui pesait plus de 7 kilos. Le nom MacBook n’est arrivé qu’en 2006. Et l’App Store est sorti en 2008, un an après le premier iPhone."},
- {t:["La Vache qui rit a été créée dans le Jura.","Le cantal fait partie des plus anciens fromages de France."], f:"Le cassoulet est protégé par une appellation d’origine contrôlée.", w:"Aucune AOC pour le cassoulet, malgré les débats enflammés entre Castelnaudary, Carcassonne et Toulouse. Le cantal, lui, est une AOP, et des textes antiques évoquent déjà les fromages de la région."},
- {t:["Le dessin de Rose dans Titanic a été fait par James Cameron lui-même.","Toy Story est le premier long métrage entièrement en images de synthèse."], f:"Dans Star Wars, Dark Vador dit « Luke, je suis ton père ».", w:"Il dit en réalité « Non, je suis ton père ». Le prénom Luke n’y est pas. Tout le monde cite la mauvaise version : c’est l’un des faux souvenirs collectifs les plus connus."},
- {t:["Le cœur humain bat environ 100 000 fois par jour.","Le plus petit os du corps humain se trouve dans l’oreille."], f:"Les cheveux et les ongles continuent de pousser après la mort.", w:"C’est la peau qui se dessèche et se rétracte, ce qui donne l’impression que les ongles et les poils dépassent davantage. Le plus petit os, l’étrier, mesure environ 3 millimètres."},
- {t:["La Marseillaise a été composée à Strasbourg.","Le 14 Juillet commémore aussi la fête de la Fédération de 1790."], f:"Le coq est l’emblème officiel de la République, inscrit dans la Constitution.", w:"La Constitution cite le drapeau, l’hymne, la devise et la langue, mais pas le coq. C’est un symbole populaire, surtout dans le sport, sans statut officiel. La Marseillaise, elle, a été écrite à Strasbourg en 1792 pour l’armée du Rhin."},
- {t:["Le nom Lego vient du danois « leg godt », « joue bien ».","Nike tient son nom de la déesse grecque de la victoire."], f:"La pomme croquée du logo d’Apple est un hommage à Alan Turing.", w:"Le graphiste Rob Janoff a expliqué que la morsure servait seulement à ce qu’on ne confonde pas la pomme avec une cerise. La légende Turing est belle, mais fausse."},
- {t:["Il y a plus de façons de mélanger un jeu de 52 cartes que d’atomes sur Terre.","Les chiffres romains n’avaient pas de zéro."], f:"Une année sur Terre dure exactement 365 jours.", w:"Elle dure environ 365 jours et 6 heures. C’est pour rattraper ces quarts de jour qu’on ajoute un 29 février tous les quatre ans."},
- {t:["Le premier radar automatique de France a été installé en 2003.","La France compte plus d’un million de kilomètres de routes."], f:"Il est interdit de conduire en tongs en France.", w:"Aucune loi n’interdit les tongs au volant. Mais si elles empêchent de manœuvrer correctement, on peut être verbalisé, et l’assurance peut le reprocher en cas d’accident. Conseil : gardez les tongs pour l’aire de repos."},
- {t:["Les girafes ont autant de vertèbres dans le cou que les humains.","Un escargot peut avoir des milliers de minuscules dents."], f:"Les chauves-souris sont aveugles.", w:"Toutes les chauves-souris voient, et certaines très bien. Beaucoup utilisent en plus l’écholocalisation pour chasser la nuit. Et les girafes ont 7 vertèbres cervicales, comme nous, simplement beaucoup plus longues."},
- {t:["La Cité de l’espace se trouve à Toulouse.","Les Concorde français étaient assemblés à Toulouse."], f:"Thomas Pesquet est né à Toulouse.", w:"Il est né à Rouen, en Normandie. Il a en revanche fait ses études d’ingénieur à Toulouse, la capitale européenne du spatial."}
+/* Le plus recherché : volumes de recherche mensuels estimés en France. s = "ah" (Ahrefs, juillet 2026) ou "sr" (SE Ranking, mars 2025) */
+const VOLSRC = {
+ ah:{l:"Ahrefs, recherches Google en France, juillet 2026", u:"https://ahrefs.com/fr/blog/top-recherches-google-france/"},
+ sr:{l:"SE Ranking, recherches Google en France, mars 2025", u:"https://seranking.com/fr/blog/top-recherches-google/"}
+};
+const VOL = [
+ {s:"ah", a:"ChatGPT", va:33120000, b:"YouTube", vb:12110000, x:"C’est la recherche la plus tapée en France, devant le programme télé. En mars 2025, elle n’en était qu’à environ 6 millions par mois."},
+ {s:"ah", a:"ChatGPT", va:33120000, b:"Programme TV", vb:15400000},
+ {s:"ah", a:"Gmail", va:13240000, b:"Facebook", vb:8200000},
+ {s:"ah", a:"Amazon", va:13090000, b:"Le bon coin", vb:7600000, x:"En ajoutant ceux qui tapent « leboncoin » attaché, environ 4 millions de plus, Leboncoin se rapproche d’Amazon sans le dépasser."},
+ {s:"ah", a:"Netflix", va:3470000, b:"Instagram", vb:3280000, x:"Moins de 200 000 recherches d’écart : le duel le plus serré du jeu."},
+ {s:"ah", a:"TikTok", va:2160000, b:"Instagram", vb:3280000},
+ {s:"ah", a:"Météo", va:3750000, b:"Programme TV", vb:15400000, x:"Les Français cherchent le programme télé quatre fois plus que la météo."},
+ {s:"ah", a:"Ameli", va:3820000, b:"CAF", vb:2770000},
+ {s:"ah", a:"Impôts", va:539000, b:"Pôle emploi", vb:508000, x:"Pôle emploi s’appelle France Travail depuis 2024, mais plus de 500 000 personnes tapent encore l’ancien nom chaque mois."},
+ {s:"ah", a:"SNCF", va:1770000, b:"PMU", vb:1240000},
+ {s:"ah", a:"Ligue des champions", va:1840000, b:"Coupe du monde des clubs", vb:352000},
+ {s:"ah", a:"Twitter", va:1000000, b:"TikTok", vb:2160000, x:"Le réseau s’appelle X depuis 2023, mais on le cherche encore un million de fois par mois sous son ancien nom."},
+ {s:"ah", a:"La Poste", va:958000, b:"SNCF", vb:1770000},
+ {s:"ah", a:"Outlook", va:3630000, b:"Gmail", vb:13240000},
+ {s:"ah", a:"Google Maps", va:5550000, b:"Google", vb:4880000, x:"Près de 5 millions de personnes tapent « google » dans Google chaque mois."},
+ {s:"ah", a:"Traduction", va:9030000, b:"Google Traduction", vb:7310000},
+ {s:"ah", a:"Facebook", va:8200000, b:"Instagram", vb:3280000},
+ {s:"ah", a:"Netflix", va:3470000, b:"Programme TV ce soir", vb:5580000},
+ {s:"ah", a:"Crédit Agricole", va:1720000, b:"Banque Postale", vb:677000},
+ {s:"ah", a:"Orange", va:1520000, b:"Twitter", vb:1000000},
+ {s:"ah", a:"Ameli", va:3820000, b:"Impôts", vb:539000},
+ {s:"sr", a:"PSG", va:4090000, b:"Real Madrid", vb:1830000},
+ {s:"sr", a:"Kylian Mbappé", va:1220000, b:"Emmanuel Macron", vb:673000, x:"Mbappé était presque deux fois plus recherché que le président."},
+ {s:"sr", a:"Kylian Mbappé", va:1220000, b:"Taylor Swift", vb:673000},
+ {s:"sr", a:"Burger King", va:2740000, b:"KFC", vb:823000},
+ {s:"sr", a:"Ikea", va:5000000, b:"Leroy Merlin", vb:6120000},
+ {s:"sr", a:"Decathlon", va:6120000, b:"Castorama", vb:2240000},
+ {s:"sr", a:"Vinted", va:6120000, b:"Shein", vb:5000000},
+ {s:"sr", a:"Shein", va:5000000, b:"Temu", vb:2740000},
+ {s:"sr", a:"Airbnb", va:6120000, b:"Booking", vb:4090000},
+ {s:"sr", a:"Doctolib", va:7480000, b:"Ameli", vb:5000000},
+ {s:"sr", a:"Spotify", va:1500000, b:"Deezer", vb:673000, x:"Deezer est français, mais Spotify était plus de deux fois plus recherché."},
+ {s:"sr", a:"Carrefour", va:3350000, b:"Leclerc", vb:2740000},
+ {s:"sr", a:"BlaBlaCar", va:1830000, b:"SNCF", vb:3350000},
+ {s:"sr", a:"Pronote", va:823000, b:"BFMTV", vb:1220000},
+ {s:"sr", a:"Burger King", va:2740000, b:"Deliveroo", vb:368000}
 ];
 
 /* Qui de nous ? p = pimenté */
@@ -907,6 +846,8 @@ const PICTO = {
  gauge:'<path d="M3.5 17a8.5 8.5 0 0 1 17 0"/><path d="M12 17l4.2-5.2"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/>',
  debate:'<path d="M3 4.5h11v7.5H8.5L5 15v-3H3Z"/><path d="M17 8.5h4V16h-2v3l-3.5-3H10v-2"/>',
  liar:'<path d="M12 3.5 21.5 20h-19Z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/>',
+ trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+ chart:'<path d="M5 20V11M10.5 20V4M16 20v-6M2.5 20.5h19"/>',
  grid:'<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/><path d="m5.3 5.6 2.1 2.1M7.4 5.6 5.3 7.7M16.6 11 18.7 13.1M18.7 11l-2.1 2.1" stroke-width="1.6"/>',
  plate:'<rect x="2" y="7" width="20" height="10" rx="1.8"/><path d="M5.5 7v10M18.5 7v10M8.5 12h7"/>',
  who:'<circle cx="8.5" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.4"/><path d="M3 20c0-3.3 2.4-6 5.5-6s5.5 2.7 5.5 6"/><path d="M14.5 14.4c.6-.3 1.3-.4 2-.4 2.7 0 4.5 2.3 4.5 5"/>'
@@ -919,28 +860,28 @@ const GAMES = [
   rule:"Une grille de 16 choses à repérer sur la route. Le premier qui en voit une la crie, et on tape la case pour noter qui l’a vue : 1 point. Celui qui complète une ligne, une colonne ou une diagonale gagne 3 points de plus. Carton plein : 5 points de plus."},
  {id:"plaques", road:true, name:"Le jeu des plaques", pitch:"Un numéro sur une plaque : quel département ? Et sa préfecture ?", sign:"blue", picto:"plate", closest:true, isNew:true,
   rule:"Une plaque s’affiche. Le premier qui trouve le département marque 1 point, et 1 point de plus s’il donne aussi la préfecture. En bas, tapez le numéro d’une vraie plaque croisée sur la route pour savoir d’où elle vient."},
- {id:"debat", name:"Le Grand Débat", pitch:"Deux camps tirés au sort, un minuteur, et mon avis sur le fond.", sign:"blue", picto:"debate", wide:true, vote:true, isNew:true,
-  rule:"Les camps sont tirés au sort. Chaque camp défend son idée : 1 minute de plaidoirie chacun, puis 30 secondes de réplique. En panne d’idées ? Demandez un argument de secours. À la fin, chacun vote pour le meilleur orateur, sauf pour lui-même : chaque voix reçue rapporte 1 point."},
- {id:"souvenir", name:"On s’en souviendra ?", pitch:"Dans 100, 300, 500 ou 1 000 ans ? Mon verdict à la clé.", sign:"brown", picto:"temple",
+ {id:"souvenir", name:"On s’en souviendra ?", pitch:"Dans 100, 300, 500 ou 1 000 ans ? Mon verdict à la clé.", sign:"brown", picto:"temple", wide:true,
   opts:["< 100","100","300","500","1 000+"], rule:"Chacun choisit jusqu’à quand on se souviendra de cette personne. Même horizon que mon verdict : 2 points. Juste à côté : 1 point. Contester mon verdict est fortement encouragé."},
  {id:"tp", name:"Tu préfères", pitch:"Deux options, un seul choix. Et le mien, argumenté.", sign:"green", picto:"fork",
   opts:["A","B"], rule:"Chacun choisit A ou B. Ceux qui font le même choix que moi marquent 1 point. Le camp minoritaire doit défendre son choix à voix haute."},
  {id:"prix", name:"Devine le prix", pitch:"Rachats, enchères, transferts : le plus proche gagne.", sign:"blue", picto:"euro", closest:true,
   rule:"Le lecteur lit la question, chacun annonce un prix à voix haute. On révèle, puis on désigne le plus proche : 1 point."},
- {id:"google", name:"Le plus googlé", pitch:"Laquelle a le plus grimpé sur Google ?", sign:"paper", picto:"search",
-  opts:["A","B"], rule:"D’après le classement officiel « L’année en recherches » de Google, laquelle des deux recherches a le plus progressé sur l’année ? Bonne réponse : 1 point."},
+ {id:"google", name:"Qui a le plus progressé ?", pitch:"Les tendances Google de l’année : laquelle a le plus grimpé ?", sign:"paper", picto:"trend",
+  opts:["A","B"], rule:"D’après le classement officiel « L’année en recherches » de Google, laquelle des deux recherches a le plus progressé sur l’année ? Ce n’est pas forcément la plus tapée, c’est celle qui a le plus explosé. Bonne réponse : 1 point."},
+ {id:"volume", name:"Qui a été le plus recherché ?", pitch:"En nombre de recherches Google par mois : lequel l’emporte ?", sign:"green", picto:"chart", isNew:true,
+  opts:["A","B"], rule:"Lequel des deux est le plus tapé sur Google en France chaque mois ? Les volumes sont des estimations d’outils de référencement (Ahrefs et SE Ranking). Bonne réponse : 1 point. Bonus d’ambiance : devinez l’écart."},
  {id:"avap", name:"Avant ou après ?", pitch:"La chronologie qui piège tout le monde.", sign:"yellow", picto:"swap", mine:true,
   opts:["Avant","Après"], rule:"Le premier événement s’est-il passé avant ou après le second ? Bonne réponse : 1 point. Les écarts sont parfois de quelques mois."},
  {id:"cote", name:"La cote de Claude", pitch:"J’ai donné ma probabilité. Devinez-la.", sign:"red", picto:"gauge", closest:true, mine:true,
   rule:"Pour chaque prédiction, j’ai fixé ma probabilité que ça arrive. Chacun annonce un pourcentage. Le plus proche de ma cote marque 1 point, puis on débat."},
- {id:"mensonge", name:"Le mensonge de Claude", pitch:"Trois affirmations, une seule est fausse. Trouvez-la.", sign:"paper", picto:"liar", mine:true, isNew:true,
-  opts:["1","2","3"], rule:"Je donne trois affirmations : deux sont vraies, une est un mensonge. Chacun désigne le mensonge. Bonne réponse : 1 point. Celui qui a deviné doit expliquer pourquoi."},
+ {id:"mensonge", name:"Le mensonge de Claude", pitch:"Trois trucs absurdes ou trois évidences. Un seul est faux.", sign:"paper", picto:"liar", mine:true,
+  opts:["1","2","3"], rule:"Chaque carte donne soit trois trucs qui ont l’air complètement absurdes, soit trois évidences. Deux sont vrais, un est faux, et le mensonge a exactement le même ton que les vérités. Chacun désigne le faux. Bonne réponse : 1 point."},
  {id:"quinous", name:"Qui de nous ?", pitch:"Tout le monde pointe du doigt au signal. L’élu se défend.", sign:"brown", picto:"who", vote:true, isNew:true,
   rule:"Le lecteur lit la question et compte « 3, 2, 1 ». Au signal, chacun pointe du doigt quelqu’un, lui-même compris. On note les votes. Ceux qui ont voté pour l’élu marquent 1 point, et l’élu a 30 secondes pour se défendre."}
 ];
 const GM = Object.fromEntries(GAMES.map(g => [g.id, g]));
-const DATA = {bingo:BINGO, plaques:DEPTS, debat:DEBAT, souvenir:SOUV, tp:TP, prix:PRIX, google:GOOG, avap:AVAP, cote:COTE, mensonge:MENS, quinous:QDN};
-const KEY = {bingo:i=>i, plaques:i=>i.c, debat:i=>i.q, souvenir:i=>i.n, tp:i=>i.a, prix:i=>i.q, google:i=>i.a+"|"+i.b, avap:i=>i.k||i.a, cote:i=>i.q, mensonge:i=>i.f, quinous:i=>i.q};
+const DATA = {bingo:BINGO, plaques:DEPTS, souvenir:SOUV, tp:TP, prix:PRIX, google:GOOG, volume:VOL, avap:AVAP, cote:COTE, mensonge:MENS, quinous:QDN};
+const KEY = {bingo:i=>i, plaques:i=>i.c, souvenir:i=>i.n, tp:i=>i.a, prix:i=>i.q, google:i=>i.a+"|"+i.b, volume:i=>i.a+"|"+i.b, avap:i=>i.k||i.a, cote:i=>i.q, mensonge:i=>i.f, quinous:i=>i.q};
 const ROUNDS = [{c:"x", l:"Plaidoirie", s:60}, {c:"y", l:"Plaidoirie", s:60}, {c:"x", l:"Réplique", s:30}, {c:"y", l:"Réplique", s:30}];
 const HORIZ = ["Moins de 100 ans","100 ans","300 ans","500 ans","1 000 ans et plus"];
 const HYEAR = ["oublié avant 2126","encore connu en 2126","encore connu en 2326","encore connu en 2526","encore connu en 3026"];
@@ -950,6 +891,7 @@ function answer(g, i){
   if (g==="souvenir") return i.v;
   if (g==="tp") return i.c==="a" ? 0 : 1;
   if (g==="google") return i.ra < i.rb ? 0 : 1;
+  if (g==="volume") return i.va > i.vb ? 0 : 1;
   if (g==="avap") return i.ya < i.yb ? 0 : 1;
   if (g==="mensonge") return S.cur.order.indexOf(2);
   return null;
@@ -1020,7 +962,17 @@ function pointsFor(g, pick, ans){
 const LS = "aire-de-jeux:v1";
 function fresh(){
   return {players:[{id:"p1",name:"Aloys",score:0},{id:"p2",name:"Clacla",score:0},{id:"p3",name:"Coco",score:0},{id:"p4",name:"Soso",score:0}],
-          seen:{}, cur:null, view:"home", editing:false, confirmReset:false};
+          seen:{}, cur:null, view:"home", editing:false, confirmReset:false, resetFri: Date.now() >= RESET_AT};
+}
+/* Remise à zéro automatique le jour du départ : vendredi 13 novembre 2026, 4 h, heure de Paris.
+   Scores, cartes jouées et bingo repartent de zéro ; les prénoms restent. */
+const RESET_AT = new Date("2026-11-13T04:00:00+01:00").getTime();
+let resetNow = false;
+function fridayReset(s){
+  if (Date.now() < RESET_AT || s.resetFri) return false;
+  s.players.forEach(p => p.score = 0);
+  s.seen = {}; s.cur = null; s.view = "home"; s.bingo = null; s.resetFri = true;
+  return true;
 }
 function load(){
   try {
@@ -1029,6 +981,8 @@ function load(){
       /* Remplace les prénoms provisoires de la version 1 par l’équipage réel */
       const tmp = {"Pote 2":"Clacla","Pote 3":"Coco","Pote 4":"Soso"};
       s.players.forEach(p => { if (tmp[p.name]) p.name = tmp[p.name]; });
+      if (s.cur && !GM[s.cur.game]){ s.cur = null; s.view = "home"; }
+      resetNow = fridayReset(s);
       return Object.assign(fresh(), s, {editing:false, confirmReset:false, bsel:null, bconfirm:false});
     }
   } catch(e){}
@@ -1091,7 +1045,11 @@ let wake = null;
 async function keepAwake(){
   try { if ("wakeLock" in navigator && !wake){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } } catch(e){}
 }
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { wake = null; } });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  wake = null;
+  if (fridayReset(S)){ stopTimer(); render(); window.scrollTo(0, 0); toast("Jour J : scores remis à zéro. Bonne route !"); }
+});
 
 function currentItem(){
   if (!S.cur) return null;
@@ -1186,7 +1144,9 @@ function renderHome(){
 
     <div class="sec">
       ${reset}
-      <p class="foot">${ty("Version 3 du lundi 9 novembre : le Bingo de l’autoroute, le Jeu des plaques et des objets improbables à prix vérifiés. Prochain arrêt mercredi : finitions et classement de fin de trajet. Une fois ouverte avec du réseau, l’appli tient sans connexion.")}</p>
+      <p class="foot">${ty(Date.now() < RESET_AT
+        ? "Mode test : les scores repartiront de zéro tout seuls vendredi 13 novembre à partir de 4 h, au premier lancement. Version 4 du 9 novembre. Une fois ouverte avec du réseau, l’appli tient sans connexion."
+        : "Version 4 du 9 novembre. Une fois ouverte avec du réseau, l’appli tient sans connexion.")}</p>
     </div>
   </main>`;
 }
@@ -1222,7 +1182,8 @@ function promptHTML(g, it, rev, ans){
   if (g.id === "mensonge"){
     const st = S.cur.order.map(k => k === 2 ? it.f : it.t[k]);
     return `<div class="sign ${sg} ${rev ? "revealed" : ""}"><div class="in">
-      <p class="eyebrow">${ty("Deux vérités, un mensonge. Lequel ?")}</p>
+      <span class="kind">${ty(it.m === "e" ? "Trois évidences" : "Trois trucs absurdes")}</span>
+      <p class="eyebrow">${ty(it.m === "e" ? "Tout a l’air vrai. Une seule est fausse. Laquelle ?" : "Tout a l’air faux. Deux sont vrais. Lequel est inventé ?")}</p>
       ${st.map((s, i) => `<div class="opt small ${rev && i === ans ? "chosen" : ""}"><span class="tag">${i + 1}</span><span>${ty(s)}</span></div>`).join("")}
     </div></div>`;
   }
@@ -1232,9 +1193,10 @@ function promptHTML(g, it, rev, ans){
   if (g.id === "souvenir") return `<div class="sign ${sg}"><div class="in">
       <p class="eyebrow">${ty("On s’en souviendra encore dans…")}</p>
       <h2 class="big">${ty(it.n)}</h2><p class="sub">${ty(it.d)}</p></div></div>`;
-  if (g.id === "tp" || g.id === "google"){
+  if (g.id === "tp" || g.id === "google" || g.id === "volume"){
     const head = g.id === "tp" ? `<p class="eyebrow">Tu préfères…</p>`
-      : `<p class="eyebrow">${ty(`Google ${it.s ? "Monde" : "France"} · ${it.y} · ${it.c}`)}</p><p class="sub">${ty("Laquelle a le plus grimpé dans les recherches ?")}</p>`;
+      : g.id === "google" ? `<p class="eyebrow">${ty(`Tendances Google ${it.s ? "Monde" : "France"} · ${it.y} · ${it.c}`)}</p><p class="sub">${ty("Laquelle a le plus progressé dans l’année ?")}</p>`
+      : `<p class="eyebrow">${ty("Recherches Google en France, par mois")}</p><p class="sub">${ty("Lequel est le plus recherché ?")}</p>`;
     return `<div class="sign ${sg} ${rev ? "revealed" : ""}"><div class="in">${head}
       <div class="opt ${rev && ans===0 ? "chosen" : ""}"><span class="tag">A</span><span>${ty(it.a)}</span></div>
       <div class="or">ou</div>
@@ -1294,6 +1256,10 @@ function pointsLine(){
   return `<p class="pts-line">${ty(ids.map(k => `+${a[k]} ${S.players[pIndex(k)].name}`).join(", "))}</p>`;
 }
 
+function fmtVol(n){
+  if (n >= 1e6){ const v = n / 1e6, t = (v >= 10 ? v.toFixed(1) : v.toFixed(2)).replace(/\.?0+$/, "").replace(".", ","); return t + (v < 2 ? " million" : " millions"); }
+  return Math.round(n / 1000) + " 000";
+}
 function topIds(){
   const n = tallyVotes(), m = Math.max(0, ...Object.values(n));
   return m > 0 ? Object.keys(n).filter(k => n[k] === m) : [];
@@ -1436,6 +1402,17 @@ function revealHTML(g, it, ans){
   if (g.id === "prix") return `<section class="reveal" id="rev"><p class="eyebrow">La réponse</p>
       <p class="verdict">${ty(it.r)}</p><p class="why">${ty(it.x)}</p>
       ${it.s ? `<p class="src">Source : ${it.u ? `<a href="${esc(it.u)}" target="_blank" rel="noopener">${ty(it.s)}</a>` : ty(it.s)}</p>` : ""}</section>`;
+  if (g.id === "volume"){
+    const big = Math.max(it.va, it.vb), small = Math.min(it.va, it.vb), r = big / small;
+    const gap = r >= 1.5 ? `${String(+(r.toFixed(1))).replace(".", ",")} fois plus de recherches.` : `Seulement ${Math.round((r - 1) * 100)} % de recherches en plus.`;
+    const rows = [[it.a, it.va, ans === 0], [it.b, it.vb, ans === 1]].sort((x, y) => y[1] - x[1]);
+    const src = VOLSRC[it.s];
+    return `<section class="reveal" id="rev"><p class="eyebrow">Recherches par mois en France</p>
+      <p class="verdict">${ty(ans === 0 ? it.a : it.b)}</p>
+      <div class="ranks">${rows.map(r => `<div class="rank vol ${r[2] ? "win" : ""}"><b>${ty(r[0])}</b><em>${ty(fmtVol(r[1]))}</em></div>`).join("")}</div>
+      <p class="why">${ty(gap + (it.x ? " " + it.x : ""))}</p>
+      <p class="src">Source : <a href="${esc(src.u)}" target="_blank" rel="noopener">${ty(src.l)}</a></p>${pointsLine()}</section>`;
+  }
   if (g.id === "google"){
     const rows = [[it.a, it.ra, ans===0], [it.b, it.rb, ans===1]].sort((x, y) => x[1] - y[1]);
     return `<section class="reveal" id="rev"><p class="eyebrow">${ty(`Classement Google ${it.s ? "Monde" : "France"} ${it.y} · ${it.c}`)}</p>
@@ -1585,6 +1562,7 @@ app.addEventListener("toggle", e => {
 }, true);
 
 render();
+if (resetNow) toast("Jour J : scores remis à zéro. Bonne route !");
 </script>
 
 <script>
