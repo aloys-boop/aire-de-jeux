@@ -1,5 +1,5 @@
 /* Aire de jeux : fonctionne sans réseau une fois ouverte une première fois */
-const CACHE = "aire-de-jeux-20261107091451";
+const CACHE = "aire-de-jeux-20261109092909";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

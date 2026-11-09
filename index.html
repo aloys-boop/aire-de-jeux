@@ -286,7 +286,34 @@ p{margin:0}
 .stmt.lie em{background:var(--sign-red)}
 .stmt span{font-size:15.5px; line-height:1.4}
 
-@media (max-width:360px){ .gantry{grid-template-columns:minmax(0,1fr)} .game-sign .in{min-height:0} .rounds{grid-template-columns:repeat(2, minmax(0,1fr))} }
+/* Version 3 : plaque d’immatriculation, bingo, source des prix */
+.plate{display:grid; grid-template-columns:auto minmax(0,1fr) auto; height:76px; border:3px solid #111; border-radius:9px; background:#FDFDFB; color:#111; overflow:hidden; box-shadow:var(--shadow)}
+.plate .band{width:42px; background:#1D3C9C; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:7px 0 6px; font:700 17px/1 var(--f-body)}
+.plate .band svg{width:24px; height:24px}
+.plate .reg{display:grid; place-items:center; font:800 clamp(25px,8vw,36px)/1 var(--f-display); letter-spacing:.03em; white-space:nowrap; overflow:hidden}
+.plate .dep{font:800 22px/1 var(--f-display)}
+.plate .logo{width:22px; height:16px; border-radius:3px; background:rgb(255 255 255 / .85)}
+.lookup{display:flex; flex-direction:column; gap:8px}
+.lookup input{width:100%; min-height:48px; border:1.5px solid var(--line); border-radius:10px; background:var(--surface-2); color:var(--ink); padding:0 14px; font:700 20px var(--f-num); letter-spacing:.04em}
+.lookup output{font-size:16px; font-weight:700; min-height:1.5em}
+.lookup output span{font-weight:400; color:var(--muted)}
+.route{display:inline-flex; align-self:flex-start; font:800 11px/1 var(--f-body); letter-spacing:.08em; text-transform:uppercase; background:var(--yellow); color:var(--on-yellow); padding:6px 8px 5px; border-radius:5px}
+.win-group{display:flex; flex-direction:column; gap:8px}
+.src{font-size:13px; color:var(--muted)}
+.src a{color:inherit}
+
+.bgrid{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:7px}
+.bcell{position:relative; min-height:96px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink);
+  padding:8px 5px 18px; font:700 12.5px/1.2 var(--f-body); text-align:center; display:flex; align-items:center; justify-content:center; hyphens:auto; -webkit-hyphens:auto; overflow-wrap:break-word}
+.bcell.found{background:var(--cap); color:var(--capfg); border-color:transparent}
+.bcell.sel{outline:3px solid var(--yellow); outline-offset:1px}
+.bcell .who{position:absolute; left:0; right:0; bottom:5px; font:800 10px/1 var(--f-body); letter-spacing:.06em; text-transform:uppercase; opacity:.9}
+.bpanel{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px; animation:pop .25s ease-out}
+.bpanel p{font-weight:700}
+.bstats{display:flex; flex-wrap:wrap; gap:8px; font-size:14px; color:var(--muted)}
+.bstats b{color:var(--ink)}
+
+@media (max-width:360px){ .gantry{grid-template-columns:minmax(0,1fr)} .game-sign .in{min-height:0} .rounds{grid-template-columns:repeat(2, minmax(0,1fr))} .bcell{font-size:12px; min-height:88px} }
 @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
 </style>
 </head>
@@ -445,8 +472,46 @@ const TP = [
  {a:"Être le dernier humain sur Terre", b:"Ne plus jamais être seul une seule minute", c:"b", w:"Ne jamais être seul, c’est fatigant. Être le dernier humain, c’est parler à un ballon de volley comme dans Seul au monde."}
 ];
 
-/* Devine le prix : q = question, r = réponse, x = contexte */
+/* Devine le prix : q = question, r = réponse, x = contexte, s = source, u = lien. Les cartes sourcées sortent en premier. */
 const PRIX = [
+ {q:"Combien coûte une palette complète de ciment, soit 42 sacs de 35 kg ?", r:"Environ 445 €", x:"Une palette porte 1 470 kg de ciment, près d’une tonne et demie. Le kilo revient à environ 30 centimes.", s:"Brico Dépôt et fiche technique Vicat, 2026"},
+ {q:"Combien coûte l’entretien d’un radar fixe pendant un an ?", r:"Environ 5 100 € par an", x:"L’entretien d’une voiture radar coûte huit fois plus : plus de 41 000 € par an et par véhicule.", s:"L’argus, d’après la Cour des comptes, 2023", u:"https://www.largus.fr/actualite-automobile/radars-leur-cout-d-entretien-a-explose-en-2022-30026375.html"},
+ {q:"Combien coûte la construction d’un rond-point en France ?", r:"Entre 100 000 € et 1 million d’euros", x:"Avec près de 43 000 ronds-points, la France serait de loin la championne du monde.", s:"AFP, via L’info durable, 2024", u:"https://www.linfodurable.fr/la-france-championne-du-monde-des-ronds-points-43342"},
+ {q:"Combien a coûté la construction de l’autoroute A69 entre Toulouse et Castres, par kilomètre ?", r:"Environ 8,5 millions d’euros le kilomètre", x:"Environ 450 millions d’euros pour 53 km de tracé neuf. Pendant la suspension du chantier, chaque jour d’arrêt coûtait environ 200 000 €.", s:"Sénat, 2025", u:"https://conferenceconsensuslogement.senat.fr/lessentiel/ppl24-452.pdf"},
+ {q:"Combien coûte l’aller-retour Toulouse-Castres sur la nouvelle autoroute A69 ?", r:"20,40 €", x:"Soit 10,20 € par trajet. L’autoroute a ouvert le 6 novembre 2026, après quatre ans de bras de fer autour du chantier.", s:"AFP, via L’info durable, 2026", u:"https://www.linfodurable.fr/ouverture-aux-automobilistes-de-la69-toulouse-castres-apres-quatre-ans-de-bras-de-fer-59672"},
+ {q:"Combien coûtent les péages de votre trajet, de Toulouse à Clermont-Ferrand par l’A20 et l’A89 ?", r:"Environ 34 € pour 376 km", x:"Le total se paie en trois fois : à Toulouse, à Montauban, puis en Corrèze. Par les routes nationales, on peut ne rien payer, mais on roule plus longtemps.", s:"Mappy, novembre 2026", u:"https://fr.mappy.com/itineraire/63000-clermont-ferrand/31000-toulouse"},
+ {q:"Combien coûte un panneau STOP neuf ?", r:"À partir d’environ 75 € HT", x:"Dans le même catalogue, un panneau d’entrée de ville coûte presque trois fois plus.", s:"Direct Signalétique, catalogue 2026", u:"https://direct-signaletique.com/459-panneaux-routiers"},
+ {q:"Combien coûte un carrefour à feux tricolores, installation comprise ?", r:"De 30 000 à 80 000 € environ", x:"Le feu lui-même ne coûte que 2 500 à 5 000 € : l’essentiel de la facture, ce sont les travaux de voirie et le raccordement.", s:"HelloPro, guide des prix, 2026", u:"https://conseils.hellopro.fr/combien-coute-une-signalisation-lumineuse-2172.html"},
+ {q:"Combien coûte un camion de pompiers tout-terrain de 10 000 litres pour les feux de forêt ?", r:"Environ 450 000 €", x:"Il pèse 26 tonnes, roule quand même en tout-terrain, et il est fabriqué en France par Desautel.", s:"Tendance Ouest, 2024", u:"https://www.tendanceouest.com/actualite-420300-photos-video-calvados-trois-vehicules-de-pompiers-dernier-cri-pour-lutter-contre-les-brasiers-geants"},
+ {q:"Combien coûte une rame du nouveau TGV M ?", r:"Environ 40 millions d’euros", x:"La SNCF a commandé 15 rames pour 600 millions d’euros en janvier 2026. Elles relieront la France et la Belgique à partir de 2029.", s:"Groupe SNCF, 2026", u:"https://www.groupe-sncf.com/en/group/about-us/companies/sncf-voyageurs/15-tgv-m-trainsets-alstom-order"},
+ {q:"Combien coûte un avion bombardier d’eau Canadair neuf ?", r:"Plus de 67 millions d’euros", x:"Les 12 Canadair français ont 26 ans en moyenne. En racheter 14 coûterait au moins 938 millions d’euros.", s:"Sénat, 2023", u:"https://www.senat.fr/rap/a23-134-13/a23-134-134.html"},
+ {q:"Combien coûte un Airbus A350-1000 au prix catalogue ?", r:"Plus de 360 millions de dollars", x:"Les compagnies ne paient presque jamais ce prix : un gros-porteur se vend souvent autour de la moitié du prix catalogue.", s:"AirlineRatings, 2025", u:"https://www.airlineratings.com/articles/why-airbus-still-profits-when-it-sells-planes-at-half-price"},
+ {q:"Combien coûte une borne de recharge ultra-rapide pour voitures électriques, raccordement compris ?", r:"Entre 50 000 et 150 000 €", x:"Pour être rentable, elle devrait servir 50 à 60 fois par mois. La moyenne des bornes publiques françaises est de 33.", s:"Économie Matin, 2026", u:"https://www.economiematin.fr/recharges-electriques-france-investissement"},
+ {q:"Combien s’est vendu le taureau Salers le plus cher aux enchères de Saint-Bonnet-de-Salers, dans le Cantal, en avril 2026 ?", r:"12 050 €", x:"Le prix moyen de la vente était de 5 500 €. Le taureau vedette a été acheté à trois, par des éleveurs du Cantal, de l’Allier et de Normandie.", s:"Réussir Bovins Viande, avril 2026", u:"https://www.reussir.fr/bovins-viande/salers-un-taureau-vendu-aux-encheres-12-050-euros"},
+ {q:"Combien coûte une meule entière de cantal entre-deux, environ 40 kg, chez un fromager ?", r:"Environ 940 €", x:"Il faut environ 400 litres de lait pour fabriquer une seule meule.", s:"La Boîte du Fromager, 2026", u:"https://www.laboitedufromager.com/fromage/cantal/"},
+ {q:"Combien coûte une meule entière de laguiole chez un grossiste de Rungis ?", r:"Environ 540 € HT", x:"Chaque meule est frappée d’un taureau, le symbole du village de Laguiole.", s:"Au Fromager de Rungis, 2026", u:"https://aufromagerderungis.com/en/uncooked-pressed-cheese/33-laguiole-4-a-5-mois.html"},
+ {q:"Combien coûte un hectare de terre agricole dans le Cantal ?", r:"Entre 5 700 et 7 410 € selon les secteurs", x:"Dans le Puy-de-Dôme, l’hectare va de 2 560 € dans le Livradois à 8 270 € en Limagne.", s:"Barème officiel 2025, via Weblex", u:"https://www.weblex.fr/chiffres-cles/valeur-venale-moyenne-des-terres-labourables-et-des-prairies-naturelles-en-2025-pour-les-terres-agricoles-d-au-moins-70-ares-libres-a-la-vente"},
+ {q:"Combien coûte un tracteur agricole neuf de 170 chevaux ?", r:"Environ 130 000 €", x:"Le même tracteur valait 100 200 € en 2020 : environ 30 % de hausse en quatre ans.", s:"Pleinchamp, d’après les Chambres d’agriculture, 2026", u:"https://www.pleinchamp.com/actualite/l-etat-de-la-concurrence-et-le-prix-des-tracteurs-peut-mieux-faire"},
+ {q:"Combien coûtait le kilo de truffe noire au premier marché de la saison à Lalbenque, dans le Lot, en décembre 2025 ?", r:"Entre 500 et 700 € le kilo", x:"Ce jour-là, 21 producteurs n’ont apporté qu’environ 15 kg de truffes. La vente démarre au coup de sifflet.", s:"Medialot, décembre 2025", u:"https://medialot.fr/lalbenque-40-paniers-au-menu-pour-le-1er-marche-aux-truffes-de-la-saison-2025-26/"},
+ {q:"Combien coûte un kilo de safran du Quercy, au prix de détail ?", r:"Environ 34 800 € le kilo", x:"Il se vend au demi-gramme, 17,40 €. Le producteur lotois n’en récolte que 500 g à 1 kg par an.", s:"Épices Rœllinger, 2026", u:"https://epices-roellinger.com/en/products/quercy-saffron"},
+ {q:"Combien coûte l’aller-retour adulte dans le train qui monte au sommet du puy de Dôme ?", r:"17,20 € en novembre", x:"18,60 € d’avril à septembre. La montée ne dure que 15 minutes.", s:"Panoramique des Dômes, 2026", u:"https://www.panoramiquedesdomes.fr/horaires-tarifs/"},
+ {q:"Combien coûte un billet adulte pour Vulcania en basse saison ?", r:"28 €", x:"Mauvaise nouvelle : le parc a fermé pour l’hiver le 1er novembre. Il faudra revenir au printemps.", s:"Vulcania, tarifs 2026", u:"https://www.vulcania.com/billetterie-2/"},
+ {q:"Combien coûte un essaim d’abeilles prêt à peupler une ruche ?", r:"Entre 150 et 200 €", x:"Un essaim compte plusieurs milliers d’abeilles, reine comprise.", s:"Assemblée nationale, question écrite, 2025", u:"https://questions.assemblee-nationale.fr/dyn/17/questions/QANR5L17QE4610.pdf"},
+ {q:"Combien coûte un kilo de saucisse de Toulouse chez un boucher toulousain ?", r:"Environ 12,50 € le kilo", x:"La maison Lascours, fondée à Toulouse en 1922, l’assaisonne uniquement de sel et de poivre.", s:"Maison Lascours, 2026", u:"https://www.singular.shop/en-fr/products/6kg-of-toulouse-sausages-1"},
+ {q:"Combien coûte un sac Hermès Birkin 25 neuf, au prix boutique ?", r:"9 600 €", x:"Sur le marché de la revente, le même sac s’échange environ deux fois plus cher, parce qu’il est presque impossible à acheter en boutique.", s:"Sotheby’s, janvier 2026", u:"https://www.sothebys.com/en/articles/higher-hermes-bag-prices-in-2026-what-you-need-to-know"},
+ {q:"Combien coûte une Rolex Daytona en acier neuve, au prix boutique en France ?", r:"16 350 €", x:"C’est un prix conseillé : même chez un revendeur officiel, il faut souvent attendre des années pour l’obtenir.", s:"Lepage, revendeur officiel Rolex, 2026", u:"https://lepage.fr/en/rolex/watches/m126500ln-0001.html"},
+ {q:"Combien coûte la Ferrari la moins chère du catalogue, l’Amalfi ?", r:"À partir de 240 000 €", x:"Avec le malus écologique maximal et quelques options, la facture dépasse 330 000 €.", s:"Actu-Automobile, 2025", u:"https://www.actu-automobile.com/?p=137557"},
+ {q:"Combien coûte une Bugatti Tourbillon neuve ?", r:"3,8 millions d’euros hors taxes", x:"Les 250 exemplaires sont déjà tous vendus, et la production est réservée jusqu’en 2029.", s:"Motor1, décembre 2025", u:"https://fr.motor1.com/news/780968/toutes-bugatti-tourbillon-d%C3%A9ja-vendues/"},
+ {q:"Combien coûte un kilo de caviar osciètre ?", r:"Environ 3 000 € le kilo", x:"Le caviar le plus cher du monde, issu d’esturgeons béluga albinos, peut atteindre 40 000 € le kilo.", s:"Petrossian, 2026", u:"https://www.petrossian.fr/en/blogs/news/caviar-price"},
+ {q:"Combien a été adjugée la plus grosse truffe blanche d’Alba, un peu plus d’un kilo, aux enchères de novembre 2025 ?", r:"110 000 €", x:"Elle a été vendue à Hong Kong, au profit d’une œuvre caritative.", s:"MenteLocale, novembre 2025", u:"https://www.mentelocale.it/cuneo/98789-asta-mondiale-del-tartufo-bianco-d-alba-2025-502-000-euro-raccolti-a-grinzane-cavour-record-ad-hong-kong.htm"},
+ {q:"Combien coûte un litre d’encre d’imprimante, au prix d’une cartouche de marque ?", r:"Environ 4 100 € le litre", x:"Une cartouche Epson noire de 3,4 ml coûte 13,98 € et n’imprime qu’environ 150 pages. Plus cher au litre que le caviar.", s:"E.Leclerc et Epson, 2026", u:"https://www.e.leclerc/fp/cartouche-d-encre-epson-603-etoile-de-mer-noir-8715946666747"},
+ {q:"Combien coûte une place de parking à Paris ?", r:"Environ 28 000 €", x:"Dans le 7e arrondissement, une place se vend 60 000 €, plus du double.", s:"Notaires du Grand Paris, via MonImmeuble, 2025", u:"https://monimmeuble.com/actualite/prix-des-parkings-en-ile-de-france-combien-coute-une-place"},
+ {q:"Combien coûte un mètre carré à Monaco, en moyenne ?", r:"Environ 57 600 €", x:"Dans le quartier du Larvotto, il dépasse pour la première fois 70 000 € le mètre carré.", s:"IMSEE, via Monaco Tribune, février 2026", u:"https://www.monaco-tribune.com/2026/02/immobilier-ce-quartier-de-monaco-depasse-le-seuil-record-des-70-000-e-le-m%c2%b2/"},
+ {q:"Combien coûte en moyenne le permis de conduire en France ?", r:"Environ 1 800 €", x:"Seuls 55 % des candidats réussissent la conduite du premier coup, et il faut attendre en moyenne 85 jours avant de repasser.", s:"Assemblée nationale, citant UFC-Que Choisir, 2025", u:"https://www.assemblee-nationale.fr/dyn/17/questions/QANR5L17QE11014.pdf"},
+ {q:"Combien coûte un mariage en moyenne en France, hors bague et voyage de noces ?", r:"Environ 19 300 €", x:"On compte en moyenne 90 invités, et 60 % des couples ont déjà des enfants au moment de se marier.", s:"Mariages.net, rapport 2026", u:"https://www.mariages.net/articles/organiser-mariage-france-faits-curiosites-rapport-secteur-nuptial--c11444"},
+ {q:"Combien coûte l’iPhone le plus cher vendu par Apple en France ?", r:"3 839 €", x:"C’est l’iPhone Duo pliable avec 2 To de stockage, sorti en septembre 2026. Plus de deux fois le prix d’un permis de conduire.", s:"Apple Store en ligne, 2026", u:"https://www.apple.com/fr/shop/buy-iphone/iphone-duo/%C3%A9cran-de-7,6-pouces-2to-ciel-nocturne"},
+ {q:"Combien coûte un billet pour un vol touristique dans l’espace chez Virgin Galactic ?", r:"750 000 dollars le siège", x:"Toutes les places à ce prix sont vendues, et le prochain vol commercial a été repoussé à 2027.", s:"Space.com, août 2026", u:"https://www.space.com/space-exploration/private-spaceflight/virgin-galactic-delays-next-commercial-spaceflight-to-2027"},
+ {q:"Combien coûte un timbre « lettre verte » en 2026 ?", r:"1,52 €", x:"Il coûtait 1,39 € en 2025, soit environ 9 % de hausse en un an.", s:"La Poste, 2026", u:"https://www.laposte.fr/tarif-lettre-verte"},
  {q:"Combien Facebook a-t-il payé pour racheter Instagram en 2012 ?", r:"1 milliard de dollars", x:"Instagram n’avait alors que 13 salariés."},
  {q:"Combien Facebook a-t-il payé pour racheter WhatsApp en 2014 ?", r:"19 milliards de dollars", x:"Soit environ 42 $ par utilisateur à l’époque."},
  {q:"Combien Google a-t-il payé pour racheter YouTube en 2006 ?", r:"1,65 milliard de dollars", x:"YouTube existait depuis moins de deux ans."},
@@ -529,6 +594,13 @@ const GOOG = [
  {y:2025, c:"C’est quoi…", a:"La taxe Zucman", ra:5, b:"La loi Duplomb", rb:7},
  {y:2025, s:"Monde", c:"Tendances mondiales", a:"Gemini", ra:1, b:"DeepSeek", rb:6, x:"L’assistant IA de Google est la recherche qui a le plus grimpé dans le monde en 2025."},
  {y:2025, s:"Monde", c:"Tendances mondiales", a:"iPhone 17", ra:9, b:"Coupe du monde des clubs", rb:4},
+ {y:2025, c:"Jeux vidéo", a:"Assassin’s Creed Shadows", ra:1, b:"Mario Kart World", rb:10},
+ {y:2025, c:"Jeux vidéo", a:"Clair Obscur : Expedition 33", ra:7, b:"EA Sports FC 26", rb:6, x:"Le jeu français de l’année, créé par un studio de Montpellier, a quand même moins grimpé que le foot."},
+ {y:2025, c:"Jeux vidéo", a:"Battlefield 6", ra:2, b:"Ghost of Yōtei", rb:5},
+ {y:2025, c:"Jeux vidéo", a:"Légendes Pokémon : Z-A", ra:8, b:"ARC Raiders", rb:3},
+ {y:2025, c:"Ça veut dire quoi…", a:"Tralala tralala", ra:1, b:"Sigma boy", rb:2},
+ {y:2025, c:"Ça veut dire quoi…", a:"Wesh pelo", ra:4, b:"Narcissique", rb:9},
+ {y:2025, c:"Ça veut dire quoi…", a:"Tchiper", ra:3, b:"POV", rb:10},
  {y:2024, c:"Tendances", a:"Euro 2024", ra:1, b:"JO de Paris 2024", rb:2, x:"Les Jeux à domicile ont fini juste derrière l’Euro de foot."},
  {y:2024, c:"Personnalités", a:"Michel Barnier", ra:1, b:"Kate Middleton", rb:3},
  {y:2024, c:"Athlètes", a:"Léon Marchand", ra:1, b:"Teddy Riner", rb:2},
@@ -785,6 +857,46 @@ const QDN = [
  {q:"Qui de nous a déjà menti dans cette voiture aujourd’hui ?", p:1}
 ];
 
+/* Départements : numéro, nom, préfecture */
+const DEPTS = [
+ ["01","Ain","Bourg-en-Bresse"],["02","Aisne","Laon"],["03","Allier","Moulins"],["04","Alpes-de-Haute-Provence","Digne-les-Bains"],["05","Hautes-Alpes","Gap"],
+ ["06","Alpes-Maritimes","Nice"],["07","Ardèche","Privas"],["08","Ardennes","Charleville-Mézières"],["09","Ariège","Foix"],["10","Aube","Troyes"],
+ ["11","Aude","Carcassonne"],["12","Aveyron","Rodez"],["13","Bouches-du-Rhône","Marseille"],["14","Calvados","Caen"],["15","Cantal","Aurillac"],
+ ["16","Charente","Angoulême"],["17","Charente-Maritime","La Rochelle"],["18","Cher","Bourges"],["19","Corrèze","Tulle"],["2A","Corse-du-Sud","Ajaccio"],
+ ["2B","Haute-Corse","Bastia"],["21","Côte-d’Or","Dijon"],["22","Côtes-d’Armor","Saint-Brieuc"],["23","Creuse","Guéret"],["24","Dordogne","Périgueux"],
+ ["25","Doubs","Besançon"],["26","Drôme","Valence"],["27","Eure","Évreux"],["28","Eure-et-Loir","Chartres"],["29","Finistère","Quimper"],
+ ["30","Gard","Nîmes"],["31","Haute-Garonne","Toulouse"],["32","Gers","Auch"],["33","Gironde","Bordeaux"],["34","Hérault","Montpellier"],
+ ["35","Ille-et-Vilaine","Rennes"],["36","Indre","Châteauroux"],["37","Indre-et-Loire","Tours"],["38","Isère","Grenoble"],["39","Jura","Lons-le-Saunier"],
+ ["40","Landes","Mont-de-Marsan"],["41","Loir-et-Cher","Blois"],["42","Loire","Saint-Étienne"],["43","Haute-Loire","Le Puy-en-Velay"],["44","Loire-Atlantique","Nantes"],
+ ["45","Loiret","Orléans"],["46","Lot","Cahors"],["47","Lot-et-Garonne","Agen"],["48","Lozère","Mende"],["49","Maine-et-Loire","Angers"],
+ ["50","Manche","Saint-Lô"],["51","Marne","Châlons-en-Champagne"],["52","Haute-Marne","Chaumont"],["53","Mayenne","Laval"],["54","Meurthe-et-Moselle","Nancy"],
+ ["55","Meuse","Bar-le-Duc"],["56","Morbihan","Vannes"],["57","Moselle","Metz"],["58","Nièvre","Nevers"],["59","Nord","Lille"],
+ ["60","Oise","Beauvais"],["61","Orne","Alençon"],["62","Pas-de-Calais","Arras"],["63","Puy-de-Dôme","Clermont-Ferrand"],["64","Pyrénées-Atlantiques","Pau"],
+ ["65","Hautes-Pyrénées","Tarbes"],["66","Pyrénées-Orientales","Perpignan"],["67","Bas-Rhin","Strasbourg"],["68","Haut-Rhin","Colmar"],["69","Rhône","Lyon"],
+ ["70","Haute-Saône","Vesoul"],["71","Saône-et-Loire","Mâcon"],["72","Sarthe","Le Mans"],["73","Savoie","Chambéry"],["74","Haute-Savoie","Annecy"],
+ ["75","Paris","Paris"],["76","Seine-Maritime","Rouen"],["77","Seine-et-Marne","Melun"],["78","Yvelines","Versailles"],["79","Deux-Sèvres","Niort"],
+ ["80","Somme","Amiens"],["81","Tarn","Albi"],["82","Tarn-et-Garonne","Montauban"],["83","Var","Toulon"],["84","Vaucluse","Avignon"],
+ ["85","Vendée","La Roche-sur-Yon"],["86","Vienne","Poitiers"],["87","Haute-Vienne","Limoges"],["88","Vosges","Épinal"],["89","Yonne","Auxerre"],
+ ["90","Territoire de Belfort","Belfort"],["91","Essonne","Évry-Courcouronnes"],["92","Hauts-de-Seine","Nanterre"],["93","Seine-Saint-Denis","Bobigny"],["94","Val-de-Marne","Créteil"],
+ ["95","Val-d’Oise","Cergy"],["971","Guadeloupe","Basse-Terre"],["972","Martinique","Fort-de-France"],["973","Guyane","Cayenne"],["974","La Réunion","Saint-Denis"],
+ ["976","Mayotte","Mamoudzou"]
+].map(([c, n, p]) => ({c, n, p}));
+const ROUTE = {deps:["31","82","46","19","63"], label:"A20 puis A89"};
+
+/* Bingo de l’autoroute */
+const BINGO = [
+ "Une vache rousse (une Salers ?)", "Un troupeau de moutons", "Un rapace posé sur un piquet", "Un panneau marron touristique",
+ "Un panneau « Clermont-Ferrand »", "Une plaque 63", "Une plaque d’un département d’outre-mer", "Une plaque étrangère",
+ "Un camion espagnol", "Un camping-car", "Des vélos sur une voiture", "Un coffre de toit",
+ "Une Tesla", "Une voiture de collection", "Un tracteur", "Un convoi exceptionnel",
+ "Une dépanneuse", "Une voiture de gendarmerie", "Une moto", "Un radar",
+ "Un viaduc", "Un tunnel", "Un château", "Une éolienne",
+ "Un volcan à l’horizon", "Un panneau « attention cerfs »", "Un nom d’aire qui fait rire", "Un chien dans une voiture",
+ "Un autocollant Stade Toulousain ou ASM", "Une croix occitane", "Un panneau limité à 110", "Un panneau lumineux à message",
+ "Un bouchon, même petit", "Une voiture rose ou violette", "Une voiture identique à la nôtre", "Un bus de tourisme",
+ "Un camion qui double un camion", "De la neige, même un peu", "Un pont au nom d’une rivière", "Un pick-up américain"
+];
+
 /* ============ JEUX ============ */
 const PICTO = {
  temple:'<path d="M3 9.5 12 4l9 5.5H3Z"/><path d="M5.5 10v8M10 10v8M14 10v8M18.5 10v8M3 20.5h18"/>',
@@ -795,12 +907,18 @@ const PICTO = {
  gauge:'<path d="M3.5 17a8.5 8.5 0 0 1 17 0"/><path d="M12 17l4.2-5.2"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/>',
  debate:'<path d="M3 4.5h11v7.5H8.5L5 15v-3H3Z"/><path d="M17 8.5h4V16h-2v3l-3.5-3H10v-2"/>',
  liar:'<path d="M12 3.5 21.5 20h-19Z"/><path d="M12 9.5v5"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/>',
+ grid:'<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/><path d="m5.3 5.6 2.1 2.1M7.4 5.6 5.3 7.7M16.6 11 18.7 13.1M18.7 11l-2.1 2.1" stroke-width="1.6"/>',
+ plate:'<rect x="2" y="7" width="20" height="10" rx="1.8"/><path d="M5.5 7v10M18.5 7v10M8.5 12h7"/>',
  who:'<circle cx="8.5" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.4"/><path d="M3 20c0-3.3 2.4-6 5.5-6s5.5 2.7 5.5 6"/><path d="M14.5 14.4c.6-.3 1.3-.4 2-.4 2.7 0 4.5 2.3 4.5 5"/>'
 };
 const ic = (k, sw=2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PICTO[k]}</svg>`;
 const CAR = '<svg viewBox="0 0 40 24" aria-hidden="true"><path fill="currentColor" d="M5 15.5v-3.2l3.4-6.2c.5-.9 1.4-1.4 2.4-1.4h17.6c1 0 1.9.5 2.4 1.4l3.4 6.2v3.2c0 1-.8 1.8-1.8 1.8H6.8c-1 0-1.8-.8-1.8-1.8Z"/><path fill="#0A0B0D" d="M10.6 7.2h18.8l2.4 4.6H8.2Z" opacity=".55"/><circle cx="11" cy="18" r="3.3" fill="#0A0B0D"/><circle cx="29" cy="18" r="3.3" fill="#0A0B0D"/></svg>';
 
 const GAMES = [
+ {id:"bingo", road:true, name:"Bingo de l’autoroute", pitch:"40 choses à repérer entre Toulouse et Clermont. Le premier qui voit marque.", sign:"green", picto:"grid", special:true, isNew:true,
+  rule:"Une grille de 16 choses à repérer sur la route. Le premier qui en voit une la crie, et on tape la case pour noter qui l’a vue : 1 point. Celui qui complète une ligne, une colonne ou une diagonale gagne 3 points de plus. Carton plein : 5 points de plus."},
+ {id:"plaques", road:true, name:"Le jeu des plaques", pitch:"Un numéro sur une plaque : quel département ? Et sa préfecture ?", sign:"blue", picto:"plate", closest:true, isNew:true,
+  rule:"Une plaque s’affiche. Le premier qui trouve le département marque 1 point, et 1 point de plus s’il donne aussi la préfecture. En bas, tapez le numéro d’une vraie plaque croisée sur la route pour savoir d’où elle vient."},
  {id:"debat", name:"Le Grand Débat", pitch:"Deux camps tirés au sort, un minuteur, et mon avis sur le fond.", sign:"blue", picto:"debate", wide:true, vote:true, isNew:true,
   rule:"Les camps sont tirés au sort. Chaque camp défend son idée : 1 minute de plaidoirie chacun, puis 30 secondes de réplique. En panne d’idées ? Demandez un argument de secours. À la fin, chacun vote pour le meilleur orateur, sauf pour lui-même : chaque voix reçue rapporte 1 point."},
  {id:"souvenir", name:"On s’en souviendra ?", pitch:"Dans 100, 300, 500 ou 1 000 ans ? Mon verdict à la clé.", sign:"brown", picto:"temple",
@@ -821,8 +939,8 @@ const GAMES = [
   rule:"Le lecteur lit la question et compte « 3, 2, 1 ». Au signal, chacun pointe du doigt quelqu’un, lui-même compris. On note les votes. Ceux qui ont voté pour l’élu marquent 1 point, et l’élu a 30 secondes pour se défendre."}
 ];
 const GM = Object.fromEntries(GAMES.map(g => [g.id, g]));
-const DATA = {debat:DEBAT, souvenir:SOUV, tp:TP, prix:PRIX, google:GOOG, avap:AVAP, cote:COTE, mensonge:MENS, quinous:QDN};
-const KEY = {debat:i=>i.q, souvenir:i=>i.n, tp:i=>i.a, prix:i=>i.q, google:i=>i.a+"|"+i.b, avap:i=>i.k||i.a, cote:i=>i.q, mensonge:i=>i.f, quinous:i=>i.q};
+const DATA = {bingo:BINGO, plaques:DEPTS, debat:DEBAT, souvenir:SOUV, tp:TP, prix:PRIX, google:GOOG, avap:AVAP, cote:COTE, mensonge:MENS, quinous:QDN};
+const KEY = {bingo:i=>i, plaques:i=>i.c, debat:i=>i.q, souvenir:i=>i.n, tp:i=>i.a, prix:i=>i.q, google:i=>i.a+"|"+i.b, avap:i=>i.k||i.a, cote:i=>i.q, mensonge:i=>i.f, quinous:i=>i.q};
 const ROUNDS = [{c:"x", l:"Plaidoirie", s:60}, {c:"y", l:"Plaidoirie", s:60}, {c:"x", l:"Réplique", s:30}, {c:"y", l:"Réplique", s:30}];
 const HORIZ = ["Moins de 100 ans","100 ans","300 ans","500 ans","1 000 ans et plus"];
 const HYEAR = ["oublié avant 2126","encore connu en 2126","encore connu en 2326","encore connu en 2526","encore connu en 3026"];
@@ -847,6 +965,45 @@ function teamsValid(t){
   const all = [...t.x, ...t.y, ...t.j];
   return all.length === S.players.length && S.players.every(p => all.includes(p.id));
 }
+/* Plaques : immatriculation au format AB-123-CD, sans I, O ni U */
+function randomReg(){
+  const L = "ABCDEFGHJKLMNPQRSTVWXYZ", l = () => L[Math.floor(Math.random() * L.length)];
+  return l() + l() + "-" + String(1 + Math.floor(Math.random() * 999)).padStart(3, "0") + "-" + l() + l();
+}
+const EU_STARS = `<svg viewBox="0 0 24 24" aria-hidden="true">${Array.from({length:12}, (_, k) => {
+  const a = k / 12 * 2 * Math.PI; return `<circle cx="${(12 + 8 * Math.sin(a)).toFixed(2)}" cy="${(12 - 8 * Math.cos(a)).toFixed(2)}" r="1.35" fill="#FFCC00"/>`; }).join("")}</svg>`;
+function findDept(v){
+  v = String(v || "").trim().toUpperCase(); if (!v) return null;
+  if (/^\d$/.test(v)) v = "0" + v;
+  return DEPTS.find(d => d.c === v) || null;
+}
+
+/* Bingo : grille de 16 cases, lignes, colonnes et diagonales */
+const LINES = (() => { const L = [];
+  for (let r = 0; r < 4; r++) L.push([0, 1, 2, 3].map(c => r * 4 + c));
+  for (let c = 0; c < 4; c++) L.push([0, 1, 2, 3].map(r => r * 4 + c));
+  L.push([0, 5, 10, 15], [3, 6, 9, 12]); return L; })();
+function ensureBingo(){
+  const B = S.bingo;
+  if (!B || !Array.isArray(B.cells) || B.cells.length !== 16) S.bingo = {cells: shuffle(BINGO).slice(0, 16), found:{}, lines:{}, full:null};
+  return S.bingo;
+}
+function addPts(pid, n){ const p = S.players[pIndex(pid)]; if (p) p.score += n; }
+function spot(i, pid){
+  const B = S.bingo; if (B.found[i] && pIndex(B.found[i]) >= 0) return;
+  B.found[i] = pid; addPts(pid, 1);
+  const name = S.players[pIndex(pid)].name; let msg = "";
+  LINES.forEach((L, li) => { if (L.includes(i) && !B.lines[li] && L.every(x => B.found[x])){ B.lines[li] = pid; addPts(pid, 3); msg = "Ligne pour " + name + " : +3 !"; } });
+  if (!B.full && Object.keys(B.found).length === 16){ B.full = pid; addPts(pid, 5); msg = "Carton plein pour " + name + " : +5 !"; }
+  if (msg) toast(msg);
+}
+function unspot(i){
+  const B = S.bingo, pid = B.found[i]; if (!pid) return;
+  delete B.found[i]; addPts(pid, -1);
+  LINES.forEach((L, li) => { if (L.includes(i) && B.lines[li]){ addPts(B.lines[li], -3); delete B.lines[li]; } });
+  if (B.full){ addPts(B.full, -5); B.full = null; }
+}
+
 /* Votes sur les joueurs : nombre de voix reçues par chacun */
 function tallyVotes(){
   const n = {}; S.players.forEach(p => n[p.id] = 0);
@@ -872,7 +1029,7 @@ function load(){
       /* Remplace les prénoms provisoires de la version 1 par l’équipage réel */
       const tmp = {"Pote 2":"Clacla","Pote 3":"Coco","Pote 4":"Soso"};
       s.players.forEach(p => { if (tmp[p.name]) p.name = tmp[p.name]; });
-      return Object.assign(fresh(), s, {editing:false, confirmReset:false});
+      return Object.assign(fresh(), s, {editing:false, confirmReset:false, bsel:null, bconfirm:false});
     }
   } catch(e){}
   return fresh();
@@ -885,7 +1042,8 @@ const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 const ty = s => esc(s)
   .replace(/ ([?!;:%»])/g, " $1")
   .replace(/« /g, "« ")
-  .replace(/(\d) (?=\d{3}(?!\d))/g, "$1 ");
+  .replace(/(\d) (?=\d{3}(?!\d))/g, "$1 ")
+  .replace(/ (€|\$|km|kg|ml|cm|mm|ans|h)(?![\wÀ-ÿ])/g, " $1");
 const capOf = idx => CAPS[idx % CAPS.length];
 const pIndex = id => S.players.findIndex(p => p.id === id);
 const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -945,10 +1103,13 @@ function draw(game){
   let seen = (S.seen[game] || []).filter(k => pool.some(i => keyf(i) === k));
   let unseen = pool.filter(i => !seen.includes(keyf(i)));
   if (!unseen.length){ seen = []; unseen = pool.slice(); toast("Toutes les cartes y sont passées : on remélange."); }
+  const first = game === "prix" ? unseen.filter(i => i.s) : [];
+  if (first.length) unseen = first;
   const item = unseen[Math.floor(Math.random() * unseen.length)];
   seen.push(keyf(item)); S.seen[game] = seen;
   S.cur = {game, key:keyf(item), picks:{}, revealed:false, awarded:{}};
   if (game === "mensonge") S.cur.order = shuffle([0, 1, 2]);
+  if (game === "plaques") S.cur.reg = randomReg();
   if (game === "debat"){ S.cur.teams = makeTeams(); S.cur.round = 0; S.cur.jok = {x:0, y:0}; }
   stopTimer(); T.left = null;
 }
@@ -976,16 +1137,21 @@ function renderHome(){
   const reset = S.confirmReset
     ? `<div class="ed-actions"><button class="btn-s warn" data-act="reset-yes">Oui, tout remettre à zéro</button><button class="btn-s" data-act="reset-no">Annuler</button></div>`
     : `<button class="link" data-act="reset">Remettre les scores à zéro</button>`;
-  const games = GAMES.map(g => {
+  const tile = g => {
     const n = DATA[g.id].length, seen = (S.seen[g.id] || []).length;
     const tags = (g.isNew ? `<span class="new">Nouveau</span>` : "") + (g.mine ? `<span class="mine">Signé Claude</span>` : "");
+    let cnt = seen ? `${seen} / ${n} cartes jouées` : `${n} cartes`;
+    if (g.id === "bingo"){ const f = S.bingo ? Object.keys(S.bingo.found).length : 0; cnt = f ? `${f} / 16 repérés` : "Grille de 16 cases"; }
+    if (g.id === "plaques") cnt = seen ? `${seen} / ${n} plaques` : `${n} départements`;
     return `<button class="sign ${g.sign} game-sign ${g.wide ? "wide" : ""}" data-act="open" data-game="${g.id}"><span class="in">
       <span class="picto">${ic(g.picto, 2.2)}</span>
       ${tags ? `<span class="tags">${tags}</span>` : ""}
       <span class="gname">${ty(g.name)}</span>
       <span class="gpitch">${ty(g.pitch)}</span>
-      <span class="cnt">${seen ? `${seen} / ${n} cartes jouées` : `${n} cartes`}</span>
-    </span></button>`; }).join("");
+      <span class="cnt">${cnt}</span>
+    </span></button>`; };
+  const roadGames = GAMES.filter(g => g.road).map(tile).join("");
+  const games = GAMES.filter(g => !g.road).map(tile).join("");
   document.getElementById("app").innerHTML = `
   <main class="wrap">
     <header class="sign hero"><div class="in">
@@ -999,8 +1165,13 @@ function renderHome(){
       ${editor || `<div class="bornes">${bornes}</div><p class="leader">${leader()}</p>`}
     </section>
 
+    <section class="sec" aria-labelledby="rt">
+      <div class="sec-head"><h2 id="rt">Les yeux sur la route</h2></div>
+      <div class="gantry">${roadGames}</div>
+    </section>
+
     <section class="sec" aria-labelledby="jx">
-      <div class="sec-head"><h2 id="jx">Les jeux</h2></div>
+      <div class="sec-head"><h2 id="jx">Les jeux de cartes</h2></div>
       <div class="gantry">${games}</div>
     </section>
 
@@ -1015,7 +1186,7 @@ function renderHome(){
 
     <div class="sec">
       ${reset}
-      <p class="foot">${ty("Version 2 du samedi 7 novembre : le Grand Débat, le Mensonge de Claude, Qui de nous ? et 31 personnalités de plus. Prochain arrêt lundi : des objets improbables à prix vérifiés et un bingo spécial Toulouse → Clermont. Une fois ouverte avec du réseau, l’appli tient sans connexion.")}</p>
+      <p class="foot">${ty("Version 3 du lundi 9 novembre : le Bingo de l’autoroute, le Jeu des plaques et des objets improbables à prix vérifiés. Prochain arrêt mercredi : finitions et classement de fin de trajet. Une fois ouverte avec du réseau, l’appli tient sans connexion.")}</p>
     </div>
   </main>`;
 }
@@ -1023,6 +1194,16 @@ function renderHome(){
 /* ============ RENDU : JEU ============ */
 function promptHTML(g, it, rev, ans){
   const sg = g.sign;
+  if (g.id === "plaques"){
+    const reg = S.cur.reg || (S.cur.reg = randomReg());
+    return `<div class="sign ${sg}"><div class="in">
+      <p class="eyebrow">${ty("De quel département vient cette voiture ?")}</p>
+      <div class="plate" role="img" aria-label="${esc("Plaque " + reg + ", numéro " + it.c)}">
+        <div class="band">${EU_STARS}<span>F</span></div>
+        <div class="reg">${reg}</div>
+        <div class="band"><span class="logo"></span><span class="dep">${it.c}</span></div>
+      </div></div></div>`;
+  }
   if (g.id === "debat"){
     const t = S.cur.teams;
     const mem = ids => ids.map(id => { const k = pIndex(id); return k < 0 ? "" : `<span class="member" style="--cap:${capOf(k)[0]}"><i></i>${esc(S.players[k].name)}</span>`; }).join("");
@@ -1071,10 +1252,13 @@ function promptHTML(g, it, rev, ans){
 function picksHTML(g, ans){
   const c = S.cur, rev = c.revealed;
   if (g.closest){
-    if (!rev) return `<p class="hint">${ty("Chacun annonce sa réponse à voix haute, puis on révèle.")}</p>`;
-    return `<section class="picks"><h3 class="picks-h">Qui était le plus proche ?</h3>
+    if (!rev) return `<p class="hint">${ty(g.id === "plaques" ? "Le premier qui crie le bon département marque. Bonus pour la préfecture." : "Chacun annonce sa réponse à voix haute, puis on révèle.")}</p>`;
+    const groups = g.id === "plaques" ? [["d", "Qui a trouvé le département ?"], ["p", "Et la préfecture ?"]] : [["w", "Qui était le plus proche ?"]];
+    const W = c.wins || {};
+    return `<section class="picks">${groups.map(([k, t]) => `<div class="win-group"><h3 class="picks-h">${ty(t)}</h3>
+      <div class="winners">${S.players.map((p, i) => { const on = !!W[k + ":" + p.id];
+        return `<button class="chip" style="--cap:${capOf(i)[0]}" data-act="win" data-k="${k}" data-p="${p.id}" aria-pressed="${on}"><i></i>${esc(p.name)}${on ? " +1" : ""}</button>`; }).join("")}</div></div>`).join("")}
       <p class="hint">${ty("Tape sur le ou les gagnants : 1 point chacun. Tape à nouveau pour annuler.")}</p>
-      <div class="winners">${S.players.map((p, i) => `<button class="chip" style="--cap:${capOf(i)[0]}" data-act="win" data-p="${p.id}" aria-pressed="${!!c.awarded[p.id]}"><i></i>${esc(p.name)}${c.awarded[p.id] ? " +1" : ""}</button>`).join("")}</div>
     </section>`;
   }
   if (g.vote){
@@ -1151,7 +1335,64 @@ function debatePanels(it){
       <div class="jokers">${jk("x")}${jk("y")}</div></section>`;
 }
 
+function lookupHTML(){
+  return `<section class="panel lookup"><h3>Une vraie plaque vient de passer ?</h3>
+    <label class="hint" for="lk">${ty("Tape le numéro affiché à droite de la plaque.")}</label>
+    <input id="lk" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="3" placeholder="Ex. 63">
+    <output id="lk-out" for="lk"></output></section>`;
+}
+function renderBingo(g){
+  const B = ensureBingo(), sel = S.bsel, f = Object.keys(B.found).length;
+  const cells = B.cells.map((t, i) => {
+    const pid = B.found[i], k = pid ? pIndex(pid) : -1;
+    const st = k >= 0 ? ` style="--cap:${capOf(k)[0]};--capfg:${capOf(k)[1]}"` : "";
+    return `<button class="bcell ${k >= 0 ? "found" : ""} ${sel === i ? "sel" : ""}"${st} data-act="bcell" data-i="${i}" aria-pressed="${k >= 0}">${ty(t)}${k >= 0 ? `<span class="who">${esc(S.players[k].name)}</span>` : ""}</button>`;
+  }).join("");
+  let panel = "";
+  if (sel != null && B.cells[sel]){
+    const pid = B.found[sel], k = pid ? pIndex(pid) : -1;
+    panel = k >= 0
+      ? `<div class="bpanel" id="bpanel"><p>${ty("« " + B.cells[sel] + " » : repéré par " + S.players[k].name + ".")}</p>
+          <div class="ed-actions"><button class="btn-s warn" data-act="bunspot">Retirer</button><button class="btn-s" data-act="bclose">Fermer</button></div></div>`
+      : `<div class="bpanel" id="bpanel"><p>${ty("Qui a repéré « " + B.cells[sel] + " » ?")}</p>
+          <div class="winners">${S.players.map((p, i) => `<button class="chip" style="--cap:${capOf(i)[0]}" data-act="bspot" data-p="${p.id}"><i></i>${esc(p.name)}</button>`).join("")}</div>
+          <button class="link" data-act="bclose">Annuler</button></div>`;
+  }
+  const stats = S.players.map(p => {
+    const c = Object.values(B.found).filter(x => x === p.id).length, l = Object.values(B.lines).filter(x => x === p.id).length;
+    return `<span><b>${esc(p.name)}</b> ${c} repéré${c > 1 ? "s" : ""}${l ? `, ${l} ligne${l > 1 ? "s" : ""}` : ""}</span>`; }).join("");
+  const renew = S.bconfirm
+    ? `<div class="ed-actions"><button class="btn-s warn" data-act="bnew-yes">Oui, nouvelle grille</button><button class="btn-s" data-act="bnew-no">Annuler</button></div>`
+    : `<button class="link" data-act="bnew">Tirer une nouvelle grille</button>`;
+  document.getElementById("app").innerHTML = `
+  <div class="topbar"><div class="topbar-in">
+    <button class="back" data-act="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Aire</button>
+    <span class="tb-title">${ty(g.name)}</span>
+    <span class="tb-count">${f}/16</span>
+  </div></div>
+  <main class="wrap">
+    <details class="rule" ${S.ruleOpen && S.ruleOpen[g.id] ? "open" : ""} data-rule="${g.id}"><summary>Règle du jeu</summary><p>${ty(g.rule)}</p></details>
+    <div class="sign ${g.sign}"><div class="in">
+      <p class="eyebrow">${ty("Toulouse → Clermont-Ferrand")}</p>
+      <h2 class="q">${ty(f === 16 ? "Carton plein !" : f + " sur 16 repérés")}</h2>
+      <p class="sub">${ty("Tape une case quand quelqu’un la repère. Ligne, colonne ou diagonale : +3. Carton plein : +5.")}</p>
+    </div></div>
+    <div class="bgrid" lang="fr">${cells}</div>
+    ${panel}
+    <div class="bstats">${stats}</div>
+    ${renew}
+  </main>`;
+}
+
 function revealHTML(g, it, ans){
+  if (g.id === "plaques"){
+    const onRoute = ROUTE.deps.includes(it.c);
+    return `<section class="reveal" id="rev"><p class="eyebrow">${ty("Le " + it.c + ", c’est…")}</p>
+      <p class="verdict">${ty(it.n)}</p>
+      <p class="why">${ty("Préfecture : " + it.p + ".")}</p>
+      ${onRoute ? `<span class="route">${ty("Sur votre route (" + ROUTE.label + ")")}</span>` : ""}
+      ${pointsLine()}</section>`;
+  }
   if (g.id === "debat"){
     const n = tallyVotes(), top = topIds();
     return `<section class="reveal" id="rev"><p class="eyebrow">${top.length > 1 ? "Meilleurs orateurs" : "Meilleur orateur"}</p>
@@ -1193,7 +1434,8 @@ function revealHTML(g, it, ans){
       ${tally ? `<p class="hint">${ty(tally)}</p>` : ""}${pointsLine()}</section>`;
   }
   if (g.id === "prix") return `<section class="reveal" id="rev"><p class="eyebrow">La réponse</p>
-      <p class="verdict">${ty(it.r)}</p><p class="why">${ty(it.x)}</p></section>`;
+      <p class="verdict">${ty(it.r)}</p><p class="why">${ty(it.x)}</p>
+      ${it.s ? `<p class="src">Source : ${it.u ? `<a href="${esc(it.u)}" target="_blank" rel="noopener">${ty(it.s)}</a>` : ty(it.s)}</p>` : ""}</section>`;
   if (g.id === "google"){
     const rows = [[it.a, it.ra, ans===0], [it.b, it.rb, ans===1]].sort((x, y) => x[1] - y[1]);
     return `<section class="reveal" id="rev"><p class="eyebrow">${ty(`Classement Google ${it.s ? "Monde" : "France"} ${it.y} · ${it.c}`)}</p>
@@ -1215,7 +1457,9 @@ function revealHTML(g, it, ans){
 }
 
 function renderGame(){
-  const g = GM[S.cur.game], it = currentItem();
+  const g = GM[S.cur.game];
+  if (g.special) return renderBingo(g);
+  const it = currentItem();
   if (!it){ draw(g.id); return renderGame(); }
   if (g.id === "debat"){
     if (!teamsValid(S.cur.teams)){ S.cur.teams = makeTeams(); S.cur.picks = {}; }
@@ -1239,6 +1483,7 @@ function renderGame(){
     ${picksHTML(g, ans)}
     ${rev ? revealHTML(g, it, ans) : `<button class="btn primary" data-act="reveal">${deb ? "Révéler les votes et mon avis" : "Révéler"}</button>`}
     <div class="nav">${rev ? `<button class="btn primary" data-act="next">${deb ? "Sujet suivant" : "Carte suivante"}</button>` : `<button class="btn ghost" data-act="next">${deb ? "Changer de sujet" : "Passer cette carte"}</button>`}</div>
+    ${g.id === "plaques" ? lookupHTML() : ""}
   </main>`;
 }
 
@@ -1257,7 +1502,8 @@ app.addEventListener("click", e => {
   switch (act){
     case "open": {
       const gid = b.dataset.game;
-      if (!S.cur || S.cur.game !== gid) draw(gid);
+      if (GM[gid].special){ stopTimer(); S.cur = {game: gid}; S.bsel = null; S.bconfirm = false; }
+      else if (!S.cur || S.cur.game !== gid) draw(gid);
       S.view = "game"; render(); window.scrollTo(0, 0); return;
     }
     case "home": S.view = "home"; render(); window.scrollTo(0, 0); return;
@@ -1300,13 +1546,36 @@ app.addEventListener("click", e => {
     }
     case "win": {
       const p = S.players[pIndex(pid)]; if (!p) return;
-      if (S.cur.awarded[pid]){ p.score -= 1; delete S.cur.awarded[pid]; } else { p.score += 1; S.cur.awarded[pid] = 1; }
+      const k = (b.dataset.k || "w") + ":" + pid; S.cur.wins = S.cur.wins || {};
+      if (S.cur.wins[k]){
+        delete S.cur.wins[k]; p.score -= 1;
+        S.cur.awarded[pid] = (S.cur.awarded[pid] || 1) - 1; if (!S.cur.awarded[pid]) delete S.cur.awarded[pid];
+      } else { S.cur.wins[k] = 1; p.score += 1; S.cur.awarded[pid] = (S.cur.awarded[pid] || 0) + 1; }
       render(); return;
     }
+    case "bcell": {
+      const i = +b.dataset.i; S.bsel = S.bsel === i ? null : i; render();
+      const pn = document.getElementById("bpanel");
+      if (pn) pn.scrollIntoView({behavior: reduceMotion() ? "auto" : "smooth", block:"nearest"});
+      return;
+    }
+    case "bspot": if (S.bsel != null){ spot(S.bsel, pid); S.bsel = null; render(); } return;
+    case "bunspot": if (S.bsel != null){ unspot(S.bsel); S.bsel = null; render(); } return;
+    case "bclose": S.bsel = null; render(); return;
+    case "bnew": S.bconfirm = true; render(); return;
+    case "bnew-no": S.bconfirm = false; render(); return;
+    case "bnew-yes": S.bingo = null; ensureBingo(); S.bconfirm = false; S.bsel = null; render(); toast("Nouvelle grille tirée. Les points déjà gagnés restent."); return;
     case "next": draw(S.cur.game); render(); window.scrollTo(0, 0); return;
   }
 });
 app.addEventListener("input", e => {
+  if (e.target.id === "lk"){
+    const out = document.getElementById("lk-out"), v = e.target.value.trim(), d = findDept(v);
+    out.innerHTML = !v ? "" : d
+      ? `${ty(d.n)} <span>${ty("· préfecture : " + d.p + (ROUTE.deps.includes(d.c) ? " · sur votre route" : ""))}</span>`
+      : `<span>${ty("Aucun département ne porte ce numéro.")}</span>`;
+    return;
+  }
   const pid = e.target.dataset && e.target.dataset.pid; if (!pid) return;
   const p = S.players[pIndex(pid)]; if (p){ p.name = e.target.value.trim() || "Passager"; save(); }
 });
