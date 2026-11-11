@@ -316,6 +316,35 @@ p{margin:0}
 .bstats{display:flex; flex-wrap:wrap; gap:8px; font-size:14px; color:var(--muted)}
 .bstats b{color:var(--ink)}
 
+/* Arrivée : panneau d’entrée de ville, podium, classement */
+.podium-btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:52px; border-radius:14px; border:2px solid var(--ink);
+  background:var(--surface); color:var(--ink); font:800 16px var(--f-body); width:100%}
+.podium-btn svg{width:22px; height:22px}
+.city .in{align-items:center; text-align:center; padding:18px 14px 20px}
+.city .big{font-size:clamp(38px,11.5vw,52px)}
+.podium{display:grid; grid-template-columns:repeat(var(--cols), minmax(0,1fr)); align-items:end; gap:8px; padding-top:14px}
+.pod{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0}
+.pod-crown{width:30px; height:22px; color:var(--yellow)}
+.pod-name{font:800 22px/1.1 var(--f-display); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pod-pts{font:700 14px var(--f-num); color:var(--muted); font-variant-numeric:tabular-nums}
+.pod-step{width:100%; margin-top:4px; border-radius:10px 10px 4px 4px; background:var(--cap); color:var(--capfg);
+  display:flex; justify-content:center; padding-top:10px; font:800 42px/1 var(--f-display); box-shadow:inset 0 -8px 0 rgb(0 0 0 / .12);
+  transform-origin:bottom; animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+.pod:nth-child(1) .pod-step{animation-delay:.15s}
+.pod:nth-child(3) .pod-step{animation-delay:.3s}
+@keyframes rise{from{transform:scaleY(.15)}}
+.rk-list{display:flex; flex-direction:column; gap:8px}
+.rk{display:grid; grid-template-columns:2.2em minmax(0,1fr) auto; gap:10px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px}
+.rk .n{font:800 24px/1 var(--f-display); color:var(--muted)}
+.rk .who{display:flex; flex-direction:column; gap:2px; min-width:0}
+.rk .who b{display:flex; align-items:center; gap:8px; font-size:16px}
+.rk .who b i{flex:none; width:10px; height:10px; border-radius:3px; background:var(--cap)}
+.rk .who span{font-size:13.5px; color:var(--muted); line-height:1.35}
+.rk .pts{font:700 16px var(--f-num); font-variant-numeric:tabular-nums}
+.rk.first{border-color:var(--yellow); box-shadow:inset 0 0 0 1px var(--yellow)}
+.facts{display:flex; flex-direction:column; gap:6px; font-size:15px}
+.facts b{font-weight:800}
+
 @media (max-width:360px){ .gantry{grid-template-columns:minmax(0,1fr)} .game-sign .in{min-height:0} .rounds{grid-template-columns:repeat(2, minmax(0,1fr))} .bcell{font-size:12px; min-height:88px} }
 @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
 </style>
@@ -856,9 +885,9 @@ const ic = (k, sw=2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 const CAR = '<svg viewBox="0 0 40 24" aria-hidden="true"><path fill="currentColor" d="M5 15.5v-3.2l3.4-6.2c.5-.9 1.4-1.4 2.4-1.4h17.6c1 0 1.9.5 2.4 1.4l3.4 6.2v3.2c0 1-.8 1.8-1.8 1.8H6.8c-1 0-1.8-.8-1.8-1.8Z"/><path fill="#0A0B0D" d="M10.6 7.2h18.8l2.4 4.6H8.2Z" opacity=".55"/><circle cx="11" cy="18" r="3.3" fill="#0A0B0D"/><circle cx="29" cy="18" r="3.3" fill="#0A0B0D"/></svg>';
 
 const GAMES = [
- {id:"bingo", road:true, name:"Bingo de l’autoroute", pitch:"40 choses à repérer entre Toulouse et Clermont. Le premier qui voit marque.", sign:"green", picto:"grid", special:true, isNew:true,
+ {id:"bingo", road:true, name:"Bingo de l’autoroute", pitch:"40 choses à repérer entre Toulouse et Clermont. Le premier qui voit marque.", sign:"green", picto:"grid", special:true,
   rule:"Une grille de 16 choses à repérer sur la route. Le premier qui en voit une la crie, et on tape la case pour noter qui l’a vue : 1 point. Celui qui complète une ligne, une colonne ou une diagonale gagne 3 points de plus. Carton plein : 5 points de plus."},
- {id:"plaques", road:true, name:"Le jeu des plaques", pitch:"Un numéro sur une plaque : quel département ? Et sa préfecture ?", sign:"blue", picto:"plate", closest:true, isNew:true,
+ {id:"plaques", road:true, name:"Le jeu des plaques", pitch:"Un numéro sur une plaque : quel département ? Et sa préfecture ?", sign:"blue", picto:"plate", closest:true,
   rule:"Une plaque s’affiche. Le premier qui trouve le département marque 1 point, et 1 point de plus s’il donne aussi la préfecture. En bas, tapez le numéro d’une vraie plaque croisée sur la route pour savoir d’où elle vient."},
  {id:"souvenir", name:"On s’en souviendra ?", pitch:"Dans 100, 300, 500 ou 1 000 ans ? Mon verdict à la clé.", sign:"brown", picto:"temple", wide:true,
   opts:["< 100","100","300","500","1 000+"], rule:"Chacun choisit jusqu’à quand on se souviendra de cette personne. Même horizon que mon verdict : 2 points. Juste à côté : 1 point. Contester mon verdict est fortement encouragé."},
@@ -868,7 +897,7 @@ const GAMES = [
   rule:"Le lecteur lit la question, chacun annonce un prix à voix haute. On révèle, puis on désigne le plus proche : 1 point."},
  {id:"google", name:"Qui a le plus progressé ?", pitch:"Les tendances Google de l’année : laquelle a le plus grimpé ?", sign:"paper", picto:"trend",
   opts:["A","B"], rule:"D’après le classement officiel « L’année en recherches » de Google, laquelle des deux recherches a le plus progressé sur l’année ? Ce n’est pas forcément la plus tapée, c’est celle qui a le plus explosé. Bonne réponse : 1 point."},
- {id:"volume", name:"Qui a été le plus recherché ?", pitch:"En nombre de recherches Google par mois : lequel l’emporte ?", sign:"green", picto:"chart", isNew:true,
+ {id:"volume", name:"Qui a été le plus recherché ?", pitch:"En nombre de recherches Google par mois : lequel l’emporte ?", sign:"green", picto:"chart",
   opts:["A","B"], rule:"Lequel des deux est le plus tapé sur Google en France chaque mois ? Les volumes sont des estimations d’outils de référencement (Ahrefs et SE Ranking). Bonne réponse : 1 point. Bonus d’ambiance : devinez l’écart."},
  {id:"avap", name:"Avant ou après ?", pitch:"La chronologie qui piège tout le monde.", sign:"yellow", picto:"swap", mine:true,
   opts:["Avant","Après"], rule:"Le premier événement s’est-il passé avant ou après le second ? Bonne réponse : 1 point. Les écarts sont parfois de quelques mois."},
@@ -876,7 +905,7 @@ const GAMES = [
   rule:"Pour chaque prédiction, j’ai fixé ma probabilité que ça arrive. Chacun annonce un pourcentage. Le plus proche de ma cote marque 1 point, puis on débat."},
  {id:"mensonge", name:"Le mensonge de Claude", pitch:"Trois trucs absurdes ou trois évidences. Un seul est faux.", sign:"paper", picto:"liar", mine:true,
   opts:["1","2","3"], rule:"Chaque carte donne soit trois trucs qui ont l’air complètement absurdes, soit trois évidences. Deux sont vrais, un est faux, et le mensonge a exactement le même ton que les vérités. Chacun désigne le faux. Bonne réponse : 1 point."},
- {id:"quinous", name:"Qui de nous ?", pitch:"Tout le monde pointe du doigt au signal. L’élu se défend.", sign:"brown", picto:"who", vote:true, isNew:true,
+ {id:"quinous", name:"Qui de nous ?", pitch:"Tout le monde pointe du doigt au signal. L’élu se défend.", sign:"brown", picto:"who", vote:true,
   rule:"Le lecteur lit la question et compte « 3, 2, 1 ». Au signal, chacun pointe du doigt quelqu’un, lui-même compris. On note les votes. Ceux qui ont voté pour l’élu marquent 1 point, et l’élu a 30 secondes pour se défendre."}
 ];
 const GM = Object.fromEntries(GAMES.map(g => [g.id, g]));
@@ -993,16 +1022,18 @@ function save(){ try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e){}
 
 /* ============ OUTILS ============ */
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const ty = s => esc(s)
+/* Typographie française : espaces insécables avant ? ! ; : % », après «, dans les nombres et avant les unités */
+const fix = s => String(s)
   .replace(/ ([?!;:%»])/g, " $1")
   .replace(/« /g, "« ")
   .replace(/(\d) (?=\d{3}(?!\d))/g, "$1 ")
   .replace(/ (€|\$|km|kg|ml|cm|mm|ans|h)(?![\wÀ-ÿ])/g, " $1");
+const ty = s => fix(esc(s));
 const capOf = idx => CAPS[idx % CAPS.length];
 const pIndex = id => S.players.findIndex(p => p.id === id);
 const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 function toast(msg){
-  const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false;
+  const t = document.getElementById("toast"); t.textContent = fix(msg); t.hidden = false;
   clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2600);
 }
 /* Minuteur du Grand Débat : basé sur l’horloge, il reste juste même si l’écran se met en veille */
@@ -1075,7 +1106,7 @@ function leader(){
   const max = Math.max(...S.players.map(p => p.score));
   if (max <= 0) return "Personne n’a encore marqué. Tout reste à jouer.";
   const top = S.players.filter(p => p.score === max).map(p => p.name);
-  return top.length === 1 ? `En tête : <b>${ty(top[0])}</b> avec ${max} point${max>1?"s":""}.` : `Égalité en tête : <b>${ty(top.join(", "))}</b> avec ${max} points.`;
+  return top.length === 1 ? `${ty("En tête : ")}<b>${ty(top[0])}</b> avec ${max} point${max>1?"s":""}.` : `${ty("Égalité en tête : ")}<b>${ty(top.join(", "))}</b> avec ${max} points.`;
 }
 
 /* ============ RENDU : ACCUEIL ============ */
@@ -1121,6 +1152,7 @@ function renderHome(){
     <section class="sec" aria-labelledby="eq">
       <div class="sec-head"><h2 id="eq">L’équipage</h2><button class="link" data-act="edit">${S.editing ? "Fermer" : "Modifier"}</button></div>
       ${editor || `<div class="bornes">${bornes}</div><p class="leader">${leader()}</p>`}
+      ${S.editing ? "" : `<button class="podium-btn" data-act="podium">${FLAG}${ty("Arrivée à Clermont : le podium")}</button>`}
     </section>
 
     <section class="sec" aria-labelledby="rt">
@@ -1145,9 +1177,73 @@ function renderHome(){
     <div class="sec">
       ${reset}
       <p class="foot">${ty(Date.now() < RESET_AT
-        ? "Mode test : les scores repartiront de zéro tout seuls vendredi 13 novembre à partir de 4 h, au premier lancement. Version 4 du 9 novembre. Une fois ouverte avec du réseau, l’appli tient sans connexion."
-        : "Version 4 du 9 novembre. Une fois ouverte avec du réseau, l’appli tient sans connexion.")}</p>
+        ? "Mode test : les scores repartiront de zéro tout seuls vendredi 13 novembre à partir de 4 h, au premier lancement. Version finale du 11 novembre. Une fois ouverte avec du réseau, l’appli tient sans connexion."
+        : "Version finale du 11 novembre. Une fois ouverte avec du réseau, l’appli tient sans connexion. Bonne route !")}</p>
     </div>
+  </main>`;
+}
+
+/* ============ RENDU : ARRIVÉE ============ */
+const FLAG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path fill="currentColor" d="M5 4h14v10H5z" opacity=".12"/><path fill="currentColor" d="M5 4h3.5v2.5H5zM12 4h3.5v2.5H12zM8.5 6.5H12V9H8.5zM15.5 6.5H19V9h-3.5zM5 9h3.5v2.5H5zM12 9h3.5v2.5H12zM8.5 11.5H12V14H8.5zM15.5 11.5H19V14h-3.5z"/><path d="M5 4h14v10H5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+const CROWN = '<svg viewBox="0 0 30 22" aria-hidden="true"><path fill="currentColor" d="M2 6l7 6 6-10 6 10 7-6-3 14H5z"/></svg>';
+function ranking(){
+  const sorted = S.players.map((p, i) => ({p, i})).sort((a, b) => b.p.score - a.p.score);
+  let rank = 0, prev = null;
+  return sorted.map((x, k) => { if (x.p.score !== prev){ rank = k + 1; prev = x.p.score; } return Object.assign(x, {rank}); });
+}
+function renderPodium(){
+  const R = ranking(), any = R.some(x => x.p.score > 0), last = R[R.length - 1].rank;
+  const top = R.slice(0, 3), order = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : top;
+  const H = {1:150, 2:108, 3:76};
+  const pod = order.map(x => { const [c, f] = capOf(x.i);
+    return `<div class="pod" style="--cap:${c};--capfg:${f}">
+      ${x.rank === 1 && any ? `<span class="pod-crown">${CROWN}</span>` : ""}
+      <span class="pod-name">${esc(x.p.name)}</span><span class="pod-pts">${x.p.score} pt${x.p.score > 1 ? "s" : ""}</span>
+      <span class="pod-step" style="height:${H[Math.min(x.rank, 3)]}px">${x.rank}</span></div>`; }).join("");
+  const line = x => {
+    if (!any) return "Tout reste à jouer.";
+    if (x.rank === 1) return R.filter(y => y.rank === 1).length > 1 ? "Ex æquo en tête : il va falloir un match retour." : "Champion de l’A20 et de l’A89.";
+    if (x.rank === last && R.length > 2) return "Offre le café à la prochaine aire.";
+    if (x.rank === 2) return "Sur le podium, à un cheveu du titre.";
+    if (x.rank === 3) return "Le podium, c’est déjà une victoire.";
+    return "Au pied du podium, la place la plus frustrante.";
+  };
+  const list = R.map(x => `<div class="rk ${x.rank === 1 && any ? "first" : ""}" style="--cap:${capOf(x.i)[0]}">
+      <span class="n">${x.rank}</span>
+      <span class="who"><b><i></i>${esc(x.p.name)}</b><span>${ty(line(x))}</span></span>
+      <span class="pts">${x.p.score} pt${x.p.score > 1 ? "s" : ""}</span></div>`).join("");
+  const facts = [];
+  const cards = Object.values(S.seen || {}).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0);
+  if (cards) facts.push(`<span><b>${cards}</b> ${ty("cartes jouées pendant le trajet.")}</span>`);
+  if (S.bingo){
+    const f = Object.values(S.bingo.found), lines = Object.keys(S.bingo.lines).length;
+    if (f.length){
+      const cnt = {}; f.forEach(id => cnt[id] = (cnt[id] || 0) + 1);
+      const bestId = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0], k = pIndex(bestId);
+      facts.push(`<span><b>${f.length}</b> ${ty("cases du bingo repérées sur 16" + (lines ? ", " + lines + " ligne" + (lines > 1 ? "s" : "") + " complétée" + (lines > 1 ? "s" : "") : "") + ".")}</span>`);
+      if (k >= 0) facts.push(`<span>${ty("Meilleur œil de la route : ")}<b>${esc(S.players[k].name)}</b>, ${cnt[bestId]} ${ty("case" + (cnt[bestId] > 1 ? "s" : "") + " repérée" + (cnt[bestId] > 1 ? "s" : "") + ".")}</span>`);
+    }
+  }
+  const reset = S.confirmReset
+    ? `<div class="ed-actions"><button class="btn-s warn" data-act="reset-yes">Oui, tout remettre à zéro</button><button class="btn-s" data-act="reset-no">Annuler</button></div>`
+    : `<button class="link" data-act="reset">${ty("Remettre les scores à zéro pour le retour")}</button>`;
+  document.getElementById("app").innerHTML = `
+  <div class="topbar"><div class="topbar-in">
+    <button class="back" data-act="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Aire</button>
+    <span class="tb-title">Le podium</span><span class="tb-count"></span>
+  </div></div>
+  <main class="wrap">
+    <div class="sign red city"><div class="in">
+      <p class="eyebrow">Bienvenue à</p>
+      <h2 class="big">Clermont-Ferrand</h2>
+      <p class="sub">${ty(any ? "Fin du trajet. Voici le classement." : "Personne n’a encore marqué : le podium attend ses premiers points.")}</p>
+    </div></div>
+    <section class="podium" style="--cols:${order.length}" aria-label="Podium">${pod}</section>
+    <section class="sec"><div class="sec-head"><h2>Le classement</h2></div><div class="rk-list">${list}</div></section>
+    ${facts.length ? `<section class="howto"><h3>Le trajet en chiffres</h3><div class="facts">${facts.join("")}</div></section>` : ""}
+    <section class="howto"><h3>Mon mot de la fin</h3>
+      <p>${ty(any ? "Merci d’avoir joué avec moi pendant ces 4 heures. Pour la revanche au retour, remettez les scores à zéro juste en dessous." : "Lancez un jeu depuis l’aire, les points s’afficheront ici à l’arrivée.")}</p></section>
+    <div class="sec">${reset}<button class="btn primary" data-act="home">Retour à l’aire</button></div>
   </main>`;
 }
 
@@ -1208,7 +1304,7 @@ function promptHTML(g, it, rev, ans){
       <div class="opt"><span class="tag">1</span><span>${ty(it.a)}</span></div>
       <div class="or">avant ou après</div>
       <div class="opt"><span class="tag">2</span><span>${ty(it.b)}</span></div></div></div>`;
-  if (g.id === "cote") return `<div class="sign ${sg}"><div class="in"><p class="eyebrow">Quelle est ma cote ?</p><h2 class="q">${ty(it.q)}</h2></div></div>`;
+  if (g.id === "cote") return `<div class="sign ${sg}"><div class="in"><p class="eyebrow">${ty("Quelle est ma cote ?")}</p><h2 class="q">${ty(it.q)}</h2></div></div>`;
 }
 
 function picksHTML(g, ans){
@@ -1227,7 +1323,7 @@ function picksHTML(g, ans){
     const judges = g.id === "debat" ? c.teams.j : [], top = rev ? topIds() : [];
     const title = rev ? "Les votes" : g.id === "debat" ? "Qui a été le meilleur orateur ?" : "Qui a pointé qui ?";
     const hint = g.id === "debat" ? "Chacun vote pour quelqu’un d’autre que lui. Chaque voix reçue rapporte 1 point." : "Note vers qui chacun a pointé le doigt, lui-même compris.";
-    return `<section class="picks"><h3 class="picks-h">${title}</h3>${rev ? "" : `<p class="hint">${ty(hint)}</p>`}
+    return `<section class="picks"><h3 class="picks-h">${ty(title)}</h3>${rev ? "" : `<p class="hint">${ty(hint)}</p>`}
       ${S.players.map((p, i) => { const pk = c.picks[p.id], aw = c.awarded[p.id];
         return `<div class="pick wide" style="--cap:${capOf(i)[0]}">
           <div class="pname"><i></i><span>${esc(p.name)} ${g.id === "debat" ? "vote pour…" : "pointe…"}</span>${rev && aw ? `<b class="award">+${aw}</b>` : ""}<b class="sc">${p.score} pt${p.score>1?"s":""}</b></div>
@@ -1239,7 +1335,7 @@ function picksHTML(g, ans){
     </section>`;
   }
   const wide = g.opts.length > 2;
-  return `<section class="picks"><h3 class="picks-h">${rev ? "Les réponses" : "Qui dit quoi ?"}</h3>
+  return `<section class="picks"><h3 class="picks-h">${rev ? "Les réponses" : ty("Qui dit quoi ?")}</h3>
     ${S.players.map((p, i) => { const pk = c.picks[p.id]; const aw = c.awarded[p.id];
       return `<div class="pick ${wide ? "wide" : ""}" style="--cap:${capOf(i)[0]}">
         <div class="pname"><i></i><span>${esc(p.name)}</span>${rev && aw ? `<b class="award">+${aw}</b>` : ""}<b class="sc">${p.score} pt${p.score>1?"s":""}</b></div>
@@ -1302,7 +1398,7 @@ function debatePanels(it){
 }
 
 function lookupHTML(){
-  return `<section class="panel lookup"><h3>Une vraie plaque vient de passer ?</h3>
+  return `<section class="panel lookup"><h3>${ty("Une vraie plaque vient de passer ?")}</h3>
     <label class="hint" for="lk">${ty("Tape le numéro affiché à droite de la plaque.")}</label>
     <input id="lk" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="3" placeholder="Ex. 63">
     <output id="lk-out" for="lk"></output></section>`;
@@ -1401,7 +1497,7 @@ function revealHTML(g, it, ans){
   }
   if (g.id === "prix") return `<section class="reveal" id="rev"><p class="eyebrow">La réponse</p>
       <p class="verdict">${ty(it.r)}</p><p class="why">${ty(it.x)}</p>
-      ${it.s ? `<p class="src">Source : ${it.u ? `<a href="${esc(it.u)}" target="_blank" rel="noopener">${ty(it.s)}</a>` : ty(it.s)}</p>` : ""}</section>`;
+      ${it.s ? `<p class="src">${ty("Source : ")}${it.u ? `<a href="${esc(it.u)}" target="_blank" rel="noopener">${ty(it.s)}</a>` : ty(it.s)}</p>` : ""}</section>`;
   if (g.id === "volume"){
     const big = Math.max(it.va, it.vb), small = Math.min(it.va, it.vb), r = big / small;
     const gap = r >= 1.5 ? `${String(+(r.toFixed(1))).replace(".", ",")} fois plus de recherches.` : `Seulement ${Math.round((r - 1) * 100)} % de recherches en plus.`;
@@ -1411,7 +1507,7 @@ function revealHTML(g, it, ans){
       <p class="verdict">${ty(ans === 0 ? it.a : it.b)}</p>
       <div class="ranks">${rows.map(r => `<div class="rank vol ${r[2] ? "win" : ""}"><b>${ty(r[0])}</b><em>${ty(fmtVol(r[1]))}</em></div>`).join("")}</div>
       <p class="why">${ty(gap + (it.x ? " " + it.x : ""))}</p>
-      <p class="src">Source : <a href="${esc(src.u)}" target="_blank" rel="noopener">${ty(src.l)}</a></p>${pointsLine()}</section>`;
+      <p class="src">${ty("Source : ")}<a href="${esc(src.u)}" target="_blank" rel="noopener">${ty(src.l)}</a></p>${pointsLine()}</section>`;
   }
   if (g.id === "google"){
     const rows = [[it.a, it.ra, ans===0], [it.b, it.rb, ans===1]].sort((x, y) => x[1] - y[1]);
@@ -1465,7 +1561,9 @@ function renderGame(){
 }
 
 function render(){
-  if (S.view === "game" && S.cur) renderGame(); else { S.view = "home"; stopTimer(); renderHome(); }
+  if (S.view === "game" && S.cur) renderGame();
+  else if (S.view === "podium"){ stopTimer(); renderPodium(); }
+  else { S.view = "home"; stopTimer(); renderHome(); }
   paintClock();
   save();
 }
@@ -1483,7 +1581,8 @@ app.addEventListener("click", e => {
       else if (!S.cur || S.cur.game !== gid) draw(gid);
       S.view = "game"; render(); window.scrollTo(0, 0); return;
     }
-    case "home": S.view = "home"; render(); window.scrollTo(0, 0); return;
+    case "home": S.view = "home"; S.confirmReset = false; render(); window.scrollTo(0, 0); return;
+    case "podium": S.view = "podium"; S.confirmReset = false; render(); window.scrollTo(0, 0); return;
     case "edit": S.editing = !S.editing; S.confirmReset = false; render(); return;
     case "add": {
       const id = "p" + Date.now().toString(36);
